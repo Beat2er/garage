@@ -79,7 +79,7 @@ class MainActivity : ComponentActivity() {
         getSharedPreferences("garage_settings", MODE_PRIVATE)
             .edit()
             .putString("pending_widget_device", device.id)
-            .apply()
+            .commit()
 
         val provider = ComponentName(this, GarageWidgetReceiver::class.java)
         appWidgetManager.requestPinAppWidget(provider, null, null)

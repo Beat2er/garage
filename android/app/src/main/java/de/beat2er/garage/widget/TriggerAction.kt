@@ -2,7 +2,6 @@ package de.beat2er.garage.widget
 
 import android.content.Context
 import android.util.Log
-import androidx.datastore.preferences.core.Preferences
 import androidx.glance.GlanceId
 import androidx.glance.action.ActionParameters
 import androidx.glance.appwidget.action.ActionCallback
@@ -44,6 +43,9 @@ class TriggerAction : ActionCallback {
 
         val password = prefs[WidgetKeys.DEVICE_PASSWORD]
         val switchId = prefs[WidgetKeys.DEVICE_SWITCH_ID]?.toIntOrNull() ?: 0
+        val deviceName = prefs[WidgetKeys.DEVICE_NAME] ?: "?"
+
+        Log.d(TAG, "Trigger: $deviceName MAC=$deviceMac switchId=$switchId")
 
         // Set connecting status
         updateStatus(context, glanceId, WidgetStatus.CONNECTING, "Verbinde...")
@@ -53,38 +55,52 @@ class TriggerAction : ActionCallback {
             withTimeout(TRIGGER_TIMEOUT_MS) {
                 bleManager = ShellyBleManager(context)
 
-                // Try direct MAC connection first, fallback to scan
+                // Try direct MAC connection
+                Log.d(TAG, "Versuche Direktverbindung: $deviceMac")
+                updateStatus(context, glanceId, WidgetStatus.CONNECTING, "MAC $deviceMac")
                 try {
                     bleManager!!.connect(deviceMac)
+                    Log.d(TAG, "Direktverbindung OK")
                 } catch (e: Exception) {
-                    Log.d(TAG, "Direktverbindung fehlgeschlagen, versuche Scan...")
+                    Log.d(TAG, "Direktverbindung fehlgeschlagen: ${e.message}")
+                    updateStatus(context, glanceId, WidgetStatus.CONNECTING, "Scan...")
+
+                    // Fallback: scan
                     val macSuffix = deviceMac.replace(":", "").uppercase()
+                    Log.d(TAG, "Versuche Scan: suffix=$macSuffix")
                     bleManager!!.disconnect()
                     bleManager = ShellyBleManager(context)
                     bleManager!!.connectByScan(macSuffix)
+                    Log.d(TAG, "Scan-Verbindung OK")
                 }
 
                 // Trigger the switch
+                updateStatus(context, glanceId, WidgetStatus.CONNECTING, "Sende...")
+                Log.d(TAG, "Sende Switch.Set switchId=$switchId")
                 val success = bleManager!!.triggerSwitch(
                     switchId = switchId,
                     password = password?.ifEmpty { null }
                 )
 
                 if (success) {
+                    Log.d(TAG, "Erfolgreich ausgelöst")
                     updateStatus(context, glanceId, WidgetStatus.TRIGGERED, "Ausgelöst!")
                 } else {
-                    updateStatus(context, glanceId, WidgetStatus.ERROR, "Fehlgeschlagen")
+                    Log.d(TAG, "triggerSwitch returned false")
+                    updateStatus(context, glanceId, WidgetStatus.ERROR, "Keine Antwort")
                 }
             }
         } catch (e: SecurityException) {
             Log.e(TAG, "Bluetooth-Berechtigung fehlt", e)
             updateStatus(context, glanceId, WidgetStatus.ERROR, "Berechtigung fehlt")
         } catch (e: Exception) {
-            Log.e(TAG, "Trigger fehlgeschlagen", e)
-            val msg = e.message?.take(30) ?: "Unbekannt"
+            Log.e(TAG, "Trigger fehlgeschlagen: ${e.javaClass.simpleName}: ${e.message}", e)
+            val msg = e.message?.take(40) ?: e.javaClass.simpleName
             updateStatus(context, glanceId, WidgetStatus.ERROR, msg)
         } finally {
-            bleManager?.disconnect()
+            try {
+                bleManager?.disconnect()
+            } catch (_: Exception) {}
         }
 
         // Reset to idle after delay

@@ -3,6 +3,7 @@ package de.beat2er.garage.widget
 import android.appwidget.AppWidgetManager
 import android.content.Intent
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
@@ -65,19 +66,26 @@ class WidgetConfigActivity : ComponentActivity() {
         val devices = DeviceRepository(this).getDevices()
 
         // Check for pre-selected device (from "pin widget" in app settings)
-        val prefs = getSharedPreferences("garage_settings", MODE_PRIVATE)
-        val pendingDeviceId = prefs.getString("pending_widget_device", null)
-        if (pendingDeviceId != null) {
-            prefs.edit().remove("pending_widget_device").apply()
-            val device = devices.find { it.id == pendingDeviceId }
-            if (device != null) {
-                onDeviceChosen(device)
-                return
-            }
+        val settingsPrefs = getSharedPreferences("garage_settings", MODE_PRIVATE)
+        val pendingDeviceId = settingsPrefs.getString("pending_widget_device", null)
+        val preselectedDevice = if (pendingDeviceId != null) {
+            settingsPrefs.edit().remove("pending_widget_device").commit()
+            devices.find { it.id == pendingDeviceId }
+        } else null
+
+        if (preselectedDevice != null) {
+            Log.d("WidgetConfig", "Auto-config: ${preselectedDevice.name} (widget=$appWidgetId)")
         }
 
         setContent {
             GarageTheme {
+                // Auto-select if pre-selected device exists
+                if (preselectedDevice != null) {
+                    androidx.compose.runtime.LaunchedEffect(Unit) {
+                        onDeviceChosen(preselectedDevice)
+                    }
+                }
+
                 ConfigScreen(
                     devices = devices,
                     onDeviceSelected = { device -> onDeviceChosen(device) }
