@@ -13,6 +13,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import de.beat2er.garage.data.Device
 import de.beat2er.garage.ui.theme.*
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -24,7 +25,9 @@ fun SettingsSheet(
     onToggleDebug: () -> Unit,
     onClearLogs: () -> Unit,
     versionName: String,
-    onCheckUpdate: () -> Unit
+    onCheckUpdate: () -> Unit,
+    devices: List<Device>,
+    onPinWidget: (Device) -> Unit
 ) {
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -128,6 +131,41 @@ fun SettingsSheet(
                             border = androidx.compose.foundation.BorderStroke(1.dp, Border)
                         ) {
                             Text("Log leeren", fontSize = 12.sp)
+                        }
+                    }
+                }
+            }
+
+            HorizontalDivider(color = Border)
+
+            // Widget hinzufügen
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(
+                    text = "HOME SCREEN WIDGET",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = TextDim
+                )
+                if (devices.isEmpty()) {
+                    Text(
+                        text = "Füge zuerst ein Gerät hinzu",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = TextDim
+                    )
+                } else {
+                    Text(
+                        text = "Wähle ein Gerät für das Widget",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = TextDim
+                    )
+                    devices.forEach { device ->
+                        OutlinedButton(
+                            onClick = { onPinWidget(device) },
+                            modifier = Modifier.fillMaxWidth().height(44.dp),
+                            shape = RoundedCornerShape(8.dp),
+                            colors = ButtonDefaults.outlinedButtonColors(contentColor = TextPrimary),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, Border)
+                        ) {
+                            Text(device.name, fontSize = 13.sp)
                         }
                     }
                 }

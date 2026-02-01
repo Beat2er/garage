@@ -64,6 +64,18 @@ class WidgetConfigActivity : ComponentActivity() {
 
         val devices = DeviceRepository(this).getDevices()
 
+        // Check for pre-selected device (from "pin widget" in app settings)
+        val prefs = getSharedPreferences("garage_settings", MODE_PRIVATE)
+        val pendingDeviceId = prefs.getString("pending_widget_device", null)
+        if (pendingDeviceId != null) {
+            prefs.edit().remove("pending_widget_device").apply()
+            val device = devices.find { it.id == pendingDeviceId }
+            if (device != null) {
+                onDeviceChosen(device)
+                return
+            }
+        }
+
         setContent {
             GarageTheme {
                 ConfigScreen(

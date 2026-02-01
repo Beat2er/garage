@@ -61,7 +61,7 @@ class GarageWidget : GlanceAppWidget() {
                 .cornerRadius(16.dp)
                 .background(BgCard)
                 .clickable(actionRunCallback<TriggerAction>())
-                .padding(12.dp),
+                .padding(8.dp),
             contentAlignment = Alignment.Center
         ) {
             if (isConfigured) {
@@ -72,19 +72,19 @@ class GarageWidget : GlanceAppWidget() {
                         text = deviceName!!,
                         style = TextStyle(
                             color = ColorProvider(TextPrimary),
-                            fontSize = 16.sp,
+                            fontSize = 14.sp,
                             fontWeight = FontWeight.Bold
                         ),
                         maxLines = 1
                     )
-                    Spacer(modifier = GlanceModifier.height(8.dp))
+                    Spacer(modifier = GlanceModifier.height(4.dp))
                     Text(
                         text = statusText,
                         style = TextStyle(
                             color = statusColor,
-                            fontSize = 12.sp
+                            fontSize = 11.sp
                         ),
-                        maxLines = 1
+                        maxLines = 2
                     )
                 }
             } else {

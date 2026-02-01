@@ -51,6 +51,7 @@ fun HomeScreen(
     onDismissUpdate: () -> Unit,
     onOpenDownload: (String) -> Unit,
     onCheckUpdate: () -> Unit,
+    onPinWidget: (Device) -> Unit,
     versionName: String,
     modifier: Modifier = Modifier
 ) {
@@ -363,7 +364,12 @@ fun HomeScreen(
             onToggleDebug = onToggleDebug,
             onClearLogs = onClearLogs,
             versionName = versionName,
-            onCheckUpdate = onCheckUpdate
+            onCheckUpdate = onCheckUpdate,
+            devices = uiState.devices,
+            onPinWidget = { device ->
+                showSettingsSheet = false
+                onPinWidget(device)
+            }
         )
     }
 }

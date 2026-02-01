@@ -1,6 +1,8 @@
 package de.beat2er.garage
 
 import android.Manifest
+import android.appwidget.AppWidgetManager
+import android.content.ComponentName
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
@@ -16,10 +18,12 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
+import de.beat2er.garage.data.Device
 import de.beat2er.garage.BuildConfig
 import de.beat2er.garage.ui.screens.HomeScreen
 import de.beat2er.garage.ui.theme.GarageTheme
 import de.beat2er.garage.viewmodel.GarageViewModel
+import de.beat2er.garage.widget.GarageWidgetReceiver
 
 class MainActivity : ComponentActivity() {
 
@@ -56,11 +60,29 @@ class MainActivity : ComponentActivity() {
                         startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
                     },
                     onCheckUpdate = { viewModel.checkForUpdate(showUpToDate = true) },
+                    onPinWidget = { device -> requestPinWidget(device, viewModel) },
                     versionName = BuildConfig.VERSION_NAME,
                     modifier = Modifier.fillMaxSize()
                 )
             }
         }
+    }
+
+    private fun requestPinWidget(device: Device, viewModel: GarageViewModel) {
+        val appWidgetManager = AppWidgetManager.getInstance(this)
+        if (!appWidgetManager.isRequestPinAppWidgetSupported) {
+            viewModel.showToast("Launcher unterstützt keine Widgets", isError = true)
+            return
+        }
+
+        // Save selected device for WidgetConfigActivity to pick up
+        getSharedPreferences("garage_settings", MODE_PRIVATE)
+            .edit()
+            .putString("pending_widget_device", device.id)
+            .apply()
+
+        val provider = ComponentName(this, GarageWidgetReceiver::class.java)
+        appWidgetManager.requestPinAppWidget(provider, null, null)
     }
 
     private fun requestPermissions() {

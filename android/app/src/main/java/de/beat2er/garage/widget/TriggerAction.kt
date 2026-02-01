@@ -81,7 +81,8 @@ class TriggerAction : ActionCallback {
             updateStatus(context, glanceId, WidgetStatus.ERROR, "Berechtigung fehlt")
         } catch (e: Exception) {
             Log.e(TAG, "Trigger fehlgeschlagen", e)
-            updateStatus(context, glanceId, WidgetStatus.ERROR, "Fehler")
+            val msg = e.message?.take(30) ?: "Unbekannt"
+            updateStatus(context, glanceId, WidgetStatus.ERROR, msg)
         } finally {
             bleManager?.disconnect()
         }
