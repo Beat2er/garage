@@ -237,7 +237,7 @@ class ShellyBleManager(private val context: Context) {
         val requestBytes = request.toString().toByteArray(Charsets.UTF_8)
         Log.d(TAG, "TX: $method (${requestBytes.size} Bytes)")
 
-        // 1. Laenge senden (4 Bytes Big-Endian)
+        // 1. Länge senden (4 Bytes Big-Endian)
         val lengthBytes = ByteBuffer.allocate(4).putInt(requestBytes.size).array()
         writeCharacteristic(txCtlChar!!, lengthBytes)
 
@@ -248,12 +248,12 @@ class ShellyBleManager(private val context: Context) {
                 writeCharacteristic(dataChar!!, chunk.toByteArray())
             }
 
-        // 3. Kurz warten, dann Response-Laenge lesen
+        // 3. Kurz warten, dann Response-Länge lesen
         delay(100)
         val rxLength = readCharacteristic(rxCtlChar!!)
         val responseLength = ByteBuffer.wrap(rxLength).int
 
-        Log.d(TAG, "Response-Laenge: $responseLength Bytes")
+        Log.d(TAG, "Response-Länge: $responseLength Bytes")
 
         if (responseLength == 0) return@withLock null
 

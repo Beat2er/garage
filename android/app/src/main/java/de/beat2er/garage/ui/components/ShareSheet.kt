@@ -25,6 +25,8 @@ import com.journeyapps.barcodescanner.ScanContract
 import com.journeyapps.barcodescanner.ScanOptions
 import de.beat2er.garage.ui.theme.*
 
+private const val PWA_BASE_URL = "https://beat2er.github.io/garage/"
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ShareSheet(
@@ -107,18 +109,19 @@ fun ShareSheet(
             if (selectedTab == 0) {
                 // ===== QR erstellen =====
                 Text(
-                    text = "Andere koennen diesen QR-Code scannen um die Geraete zu importieren",
+                    text = "Andere können diesen QR-Code scannen um die Geräte zu importieren",
                     style = MaterialTheme.typography.bodySmall,
                     color = TextDim
                 )
 
                 val config = remember { exportConfig() }
-                val configBase64 = remember(config) {
-                    Base64.encodeToString(config.toByteArray(Charsets.UTF_8), Base64.NO_WRAP)
+                val shareUrl = remember(config) {
+                    val b64 = Base64.encodeToString(config.toByteArray(Charsets.UTF_8), Base64.NO_WRAP)
+                    "${PWA_BASE_URL}#import=$b64"
                 }
 
-                val qrBitmap = remember(configBase64) {
-                    generateQrBitmap(configBase64, 600)
+                val qrBitmap = remember(shareUrl) {
+                    generateQrBitmap(shareUrl, 600)
                 }
 
                 if (qrBitmap != null) {
@@ -138,7 +141,7 @@ fun ShareSheet(
                     }
                 } else {
                     Text(
-                        text = "Keine Geraete zum Teilen",
+                        text = "Keine Geräte zum Teilen",
                         style = MaterialTheme.typography.bodySmall,
                         color = TextDim,
                         modifier = Modifier.padding(40.dp)
@@ -147,7 +150,7 @@ fun ShareSheet(
 
                 OutlinedButton(
                     onClick = {
-                        clipboardManager.setText(AnnotatedString(configBase64))
+                        clipboardManager.setText(AnnotatedString(shareUrl))
                         onShowToast("Link kopiert", false)
                     },
                     modifier = Modifier.fillMaxWidth().height(50.dp),
@@ -161,7 +164,7 @@ fun ShareSheet(
             } else {
                 // ===== QR scannen =====
                 Text(
-                    text = "Scanne einen QR-Code um Geraete zu importieren",
+                    text = "Scanne einen QR-Code um Geräte zu importieren",
                     style = MaterialTheme.typography.bodySmall,
                     color = TextDim
                 )
