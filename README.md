@@ -1,6 +1,6 @@
 # Shelly BLE Garage Door Opener
 
-Steuere Shelly-Geraete via Bluetooth Low Energy - ohne WLAN!
+Steuere Shelly-Geräte via Bluetooth Low Energy - ohne WLAN!
 
 ## Projektstruktur
 
@@ -18,7 +18,7 @@ garage-complete/
 │       ├── ble/            # BLE-Kommunikation
 │       ├── data/           # Datenmodelle + Repository
 │       ├── ui/             # Compose UI (Screens, Components, Theme)
-│       ├── update/         # Auto-Update Pruefung
+│       ├── update/         # Auto-Update Prüfung
 │       └── viewmodel/      # ViewModel + State
 │
 ├── docs/                   # GitHub Pages Deployment
@@ -38,7 +38,7 @@ garage-complete/
     └── ANDROID_APP_SPEC.md # Android App Spezifikation
 ```
 
-## Feature-Paritaet
+## Feature-Parität
 
 PWA und Android-App werden feature-gleich gehalten:
 
@@ -51,62 +51,64 @@ PWA und Android-App werden feature-gleich gehalten:
 | Bluetooth-Scan | Ja | Ja |
 | Auto-Update Erkennung | Ja | Ja |
 | Debug-Modus | Ja | Ja |
-| Offline-faehig | Ja | Ja |
+| Offline-fähig | Ja | Ja |
 | Passwort-Authentifizierung | Ja | Ja |
+| Home Screen Widget | - | Ja |
+| BLE-Berechtigungen dauerhaft | - | Ja |
 
 ## Quick Start
 
 ### 1. Shelly vorbereiten
 
-1. Webinterface oeffnen
+1. Webinterface öffnen
 2. **Settings → Bluetooth:**
    - Enable Bluetooth
    - Enable RPC
 3. **Scripts → Add Script:**
-   - `shelly-script/shelly-garage-script.js` einfuegen
+   - `shelly-script/shelly-garage-script.js` einfügen
    - Run on startup aktivieren
 
 ### 2a. PWA nutzen (alle Plattformen)
 
-Die PWA ist unter **https://beat2er.github.io/garage/** verfuegbar.
+Die PWA ist unter **https://beat2er.github.io/garage/** verfügbar.
 
-- **Android:** Chrome → Menue → "Zum Startbildschirm"
-- **iOS:** Bluefy App → Website oeffnen → "Zum Home-Bildschirm"
+- **Android:** Chrome → Menü → "Zum Startbildschirm"
+- **iOS:** Bluefy App → Website öffnen → "Zum Home-Bildschirm"
 
 ### 2b. Android App installieren
 
 APK herunterladen: **https://beat2er.github.io/garage/app/**
 
-Die App prueft beim Start automatisch auf Updates.
+Die App prüft beim Start automatisch auf Updates.
 
-### 3. Geraet hinzufuegen
+### 3. Gerät hinzufügen
 
-1. App oeffnen → "Hinzufuegen"
+1. App öffnen → "Hinzufügen"
 2. Name eingeben (z.B. "Hauptgarage")
-3. WiFi-MAC eingeben (steht im Geraetenamen, z.B. `CC:DB:A7:CF:EB:00`)
+3. WiFi-MAC eingeben (steht im Gerätenamen, z.B. `CC:DB:A7:CF:EB:00`)
 4. Optional: Passwort
 
-Alternativ: Bluetooth-Scan nutzen (findet Shelly-Geraete automatisch)
+Alternativ: Bluetooth-Scan nutzen (findet Shelly-Geräte automatisch)
 
 ## GitHub Pages Deployment
 
-Die Seite wird ueber `docs/` auf dem `main`-Branch gehostet.
+Die Seite wird über `docs/` auf dem `master`-Branch gehostet.
 
 ### Einrichtung
 
 1. GitHub Repository → Settings → Pages
 2. Source: **Deploy from a branch**
-3. Branch: `main`, Ordner: `/docs`
+3. Branch: `master`, Ordner: `/docs`
 4. Speichern
 
 ### PWA aktualisieren
 
-Bei Aenderungen an der PWA (`pwa/`):
-1. Aenderungen in `pwa/` vornehmen
-2. Geaenderte Dateien nach `docs/` kopieren
-3. `docs/version.json` Version erhoehen (fuer Auto-Update)
+Bei Änderungen an der PWA (`pwa/`):
+1. Änderungen in `pwa/` vornehmen
+2. Geänderte Dateien nach `docs/` kopieren
+3. `docs/version.json` Version erhöhen (für Auto-Update)
 
-### APK veroeffentlichen
+### APK veröffentlichen
 
 1. APK bauen (Android Studio → Build → Build APK)
 2. APK nach `docs/app/garage-vX.Y.Z.apk` kopieren
@@ -117,14 +119,14 @@ Bei Aenderungen an der PWA (`pwa/`):
 
 ### PWA (pwa/ → docs/)
 
-Progressive Web App fuer Browser:
+Progressive Web App für Browser:
 - Multi-Device Support
 - QR-Code Sharing (URL im QR)
 - Auto-Update
 - Auto-Reconnect (Chrome)
-- Offline-faehig
+- Offline-fähig
 
-**Unterstuetzte Browser:**
+**Unterstützte Browser:**
 - Android: Chrome, Edge, Brave
 - iOS: Bluefy App (kostenlos)
 
@@ -132,16 +134,16 @@ Progressive Web App fuer Browser:
 
 Native Android App mit Jetpack Compose:
 - Direktverbindung via MAC (kein Picker)
-- BLE-Scan zum Finden von Geraeten
+- BLE-Scan zum Finden von Geräten
 - QR-Code Import/Export
 - Auto-Update Erkennung
 - Debug-Logging
 
 ### Shelly Script (shelly-script/)
 
-Optionales Script fuer Auto-Off Impuls:
+Optionales Script für Auto-Off Impuls:
 - 500ms Impuls
-- Cooldown gegen Doppelausloesung
+- Cooldown gegen Doppelauslösung
 - Konfigurierbarer Switch-Kanal
 
 ### Spezifikationen (specs/)
@@ -151,16 +153,16 @@ Optionales Script fuer Auto-Off Impuls:
 
 ## Sicherheit
 
-**BLE ist unverschluesselt!**
+**BLE ist unverschlüsselt!**
 
 - Immer Passwort setzen
 - Vergleichbar mit Funk-Fernbedienung
-- Fuer Garagentor akzeptables Risiko
+- Für Garagentor akzeptables Risiko
 
 ## Support
 
 - Shelly Gen2+ erforderlich (Plus, Pro, Gen3, Gen4)
-- Gen1 wird NICHT unterstuetzt (kein BLE RPC)
+- Gen1 wird NICHT unterstützt (kein BLE RPC)
 
 ## Lizenz
 

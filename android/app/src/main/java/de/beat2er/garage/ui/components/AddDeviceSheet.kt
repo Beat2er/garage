@@ -56,7 +56,7 @@ fun AddDeviceSheet(
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             Text(
-                text = "Geraet hinzufuegen",
+                text = "Gerät hinzufügen",
                 style = MaterialTheme.typography.titleMedium,
                 color = TextPrimary
             )
@@ -153,7 +153,7 @@ fun AddDeviceSheet(
                     enabled = name.isNotBlank() && mac.isNotBlank()
                 ) {
                     Text(
-                        "Hinzufuegen",
+                        "Hinzufügen",
                         style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold)
                     )
                 }
@@ -161,7 +161,7 @@ fun AddDeviceSheet(
             } else {
                 // ===== Scan Tab =====
                 Text(
-                    text = "Suche nach Shelly-Geraeten in der Naehe",
+                    text = "Suche nach Shelly-Geräten in der Nähe",
                     style = MaterialTheme.typography.bodySmall,
                     color = TextDim
                 )
@@ -259,7 +259,7 @@ fun AddDeviceSheet(
                     }
                 } else if (!isScanning) {
                     Text(
-                        text = "Noch keine Geraete gefunden",
+                        text = "Noch keine Geräte gefunden",
                         style = MaterialTheme.typography.bodySmall,
                         color = TextDim,
                         modifier = Modifier.padding(vertical = 16.dp)

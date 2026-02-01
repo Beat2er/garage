@@ -7,8 +7,8 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 
-// Fallback auf Default sans-serif - Outfit und Space Mono koennen
-// spaeter als downloadable Fonts oder lokale Fonts eingebunden werden
+// Fallback auf Default sans-serif - Outfit und Space Mono können
+// später als downloadable Fonts oder lokale Fonts eingebunden werden
 val OutfitFamily = FontFamily.Default
 val SpaceMonoFamily = FontFamily.Monospace
 

@@ -38,7 +38,7 @@ fun EditDeviceSheet(
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             Text(
-                text = "Geraet bearbeiten",
+                text = "Gerät bearbeiten",
                 style = MaterialTheme.typography.titleMedium,
                 color = TextPrimary
             )
@@ -145,7 +145,7 @@ fun EditDeviceSheet(
                 )
             }
 
-            // Loeschen Button
+            // Löschen Button
             if (showDeleteConfirm) {
                 OutlinedButton(
                     onClick = {
@@ -160,7 +160,7 @@ fun EditDeviceSheet(
                     border = androidx.compose.foundation.BorderStroke(1.dp, Accent)
                 ) {
                     Text(
-                        text = "Wirklich loeschen?",
+                        text = "Wirklich löschen?",
                         style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold),
                         color = Accent
                     )
@@ -176,7 +176,7 @@ fun EditDeviceSheet(
                     border = androidx.compose.foundation.BorderStroke(1.dp, Accent)
                 ) {
                     Text(
-                        text = "Geraet loeschen",
+                        text = "Gerät löschen",
                         style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold),
                         color = Accent
                     )

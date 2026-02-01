@@ -136,7 +136,7 @@ class ShellyBleManager(private val context: Context) {
 
     suspend fun connect(macAddress: String) {
         val device = bluetoothAdapter?.getRemoteDevice(macAddress)
-            ?: throw Exception("Bluetooth nicht verfuegbar")
+            ?: throw Exception("Bluetooth nicht verfügbar")
 
         Log.d(TAG, "Verbinde mit $macAddress...")
 
@@ -158,9 +158,9 @@ class ShellyBleManager(private val context: Context) {
 
     suspend fun connectByScan(macSuffix: String) {
         val scanner = bluetoothAdapter?.bluetoothLeScanner
-            ?: throw Exception("BLE-Scanner nicht verfuegbar")
+            ?: throw Exception("BLE-Scanner nicht verfügbar")
 
-        Log.d(TAG, "Scanne nach Geraet mit MAC-Suffix: $macSuffix...")
+        Log.d(TAG, "Scanne nach Gerät mit MAC-Suffix: $macSuffix...")
 
         val deviceFound = CompletableDeferred<BluetoothDevice>()
 
@@ -168,7 +168,7 @@ class ShellyBleManager(private val context: Context) {
             override fun onScanResult(callbackType: Int, result: ScanResult) {
                 val name = result.device.name ?: return
                 if (name.uppercase().contains(macSuffix)) {
-                    Log.d(TAG, "Geraet gefunden: $name")
+                    Log.d(TAG, "Gerät gefunden: $name")
                     scanner.stopScan(this)
                     deviceFound.complete(result.device)
                 }
@@ -203,7 +203,7 @@ class ShellyBleManager(private val context: Context) {
             }
         } catch (e: TimeoutCancellationException) {
             scanner.stopScan(scanCallback)
-            throw Exception("Geraet nicht gefunden (Timeout)")
+            throw Exception("Gerät nicht gefunden (Timeout)")
         }
     }
 

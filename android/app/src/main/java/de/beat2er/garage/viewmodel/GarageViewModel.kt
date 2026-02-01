@@ -88,7 +88,7 @@ class GarageViewModel(application: Application) : AndroidViewModel(application) 
             val info = UpdateChecker.check()
             if (info != null) {
                 _uiState.update { it.copy(updateInfo = info) }
-                addDebugLog("Update verfuegbar: ${info.versionName}")
+                addDebugLog("Update verfügbar: ${info.versionName}")
             }
         }
     }
@@ -126,21 +126,21 @@ class GarageViewModel(application: Application) : AndroidViewModel(application) 
 
     fun addDevice(name: String, mac: String, password: String = "") {
         val normalizedMac = normalizeMac(mac) ?: run {
-            showToast("Ungueltige MAC-Adresse", isError = true)
+            showToast("Ungültige MAC-Adresse", isError = true)
             return
         }
         val currentDevices = _uiState.value.devices
 
         if (currentDevices.any { it.mac == normalizedMac }) {
-            showToast("Geraet bereits vorhanden", isError = true)
+            showToast("Gerät bereits vorhanden", isError = true)
             return
         }
 
         val device = Device(name = name, mac = normalizedMac, password = password)
         repository.addDevice(device)
         loadDevices()
-        showToast("$name hinzugefuegt")
-        addDebugLog("Geraet hinzugefuegt: $name ($normalizedMac)")
+        showToast("$name hinzugefügt")
+        addDebugLog("Gerät hinzugefügt: $name ($normalizedMac)")
     }
 
     fun updateDevice(device: Device) {
@@ -157,8 +157,8 @@ class GarageViewModel(application: Application) : AndroidViewModel(application) 
             state.copy(deviceStates = state.deviceStates - device.mac)
         }
         loadDevices()
-        showToast("Geloescht")
-        addDebugLog("Geraet geloescht: ${device.name}")
+        showToast("Gelöscht")
+        addDebugLog("Gerät gelöscht: ${device.name}")
     }
 
     // ========== BLE Scan ==========
@@ -170,7 +170,7 @@ class GarageViewModel(application: Application) : AndroidViewModel(application) 
         val scanner = bluetoothManager?.adapter?.bluetoothLeScanner
 
         if (scanner == null) {
-            showToast("Bluetooth nicht verfuegbar", isError = true)
+            showToast("Bluetooth nicht verfügbar", isError = true)
             return
         }
 
@@ -287,10 +287,10 @@ class GarageViewModel(application: Application) : AndroidViewModel(application) 
                 if (success) {
                     updateDeviceState(mac, DeviceUiState(
                         connectionState = DeviceConnectionState.TRIGGERED,
-                        statusText = "Ausgeloest!"
+                        statusText = "Ausgelöst!"
                     ))
-                    showToast("${device.name} ausgeloest!")
-                    addDebugLog("Erfolgreich ausgeloest!")
+                    showToast("${device.name} ausgelöst!")
+                    addDebugLog("Erfolgreich ausgelöst!")
                 } else {
                     updateDeviceState(mac, DeviceUiState(
                         connectionState = DeviceConnectionState.ERROR,
@@ -353,10 +353,10 @@ class GarageViewModel(application: Application) : AndroidViewModel(application) 
 
             if (added > 0) {
                 loadDevices()
-                showToast("$added Geraet(e) importiert")
-                addDebugLog("$added Geraet(e) importiert")
+                showToast("$added Gerät(e) importiert")
+                addDebugLog("$added Gerät(e) importiert")
             } else {
-                showToast("Alle Geraete bereits vorhanden")
+                showToast("Alle Geräte bereits vorhanden")
             }
             return added
         } catch (e: Exception) {

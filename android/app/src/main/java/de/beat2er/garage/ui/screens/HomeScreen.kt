@@ -130,7 +130,7 @@ fun HomeScreen(
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         Text(
-                            text = "Update verfuegbar: v${updateInfo.versionName}",
+                            text = "Update verfügbar: v${updateInfo.versionName}",
                             style = MaterialTheme.typography.titleSmall,
                             color = Accent
                         )
@@ -159,7 +159,7 @@ fun HomeScreen(
                                 border = androidx.compose.foundation.BorderStroke(1.dp, Border),
                                 contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
                             ) {
-                                Text("Spaeter", style = MaterialTheme.typography.bodySmall)
+                                Text("Später", style = MaterialTheme.typography.bodySmall)
                             }
                         }
                     }
@@ -185,14 +185,14 @@ fun HomeScreen(
                     )
                     Spacer(modifier = Modifier.height(20.dp))
                     Text(
-                        text = "Noch keine Geraete konfiguriert",
+                        text = "Noch keine Geräte konfiguriert",
                         style = MaterialTheme.typography.bodyMedium,
                         color = TextDim,
                         textAlign = TextAlign.Center
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
-                        text = "Fuege dein erstes Garagentor hinzu",
+                        text = "Füge dein erstes Garagentor hinzu",
                         style = MaterialTheme.typography.bodySmall,
                         color = TextDim.copy(alpha = 0.7f),
                         textAlign = TextAlign.Center
@@ -240,7 +240,7 @@ fun HomeScreen(
                 .padding(horizontal = 20.dp, vertical = 16.dp),
             horizontalArrangement = Arrangement.spacedBy(10.dp, Alignment.CenterHorizontally)
         ) {
-            // Hinzufuegen
+            // Hinzufügen
             OutlinedButton(
                 onClick = { showAddSheet = true },
                 modifier = Modifier
@@ -255,7 +255,7 @@ fun HomeScreen(
             ) {
                 Icon(Icons.Rounded.Add, contentDescription = null, modifier = Modifier.size(18.dp))
                 Spacer(modifier = Modifier.width(8.dp))
-                Text("Hinzufuegen", style = MaterialTheme.typography.bodyMedium)
+                Text("Hinzufügen", style = MaterialTheme.typography.bodyMedium)
             }
 
             // Teilen

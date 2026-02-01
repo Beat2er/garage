@@ -83,7 +83,7 @@ class MainActivity : ComponentActivity() {
             }
         }
 
-        // Kamera (fuer QR-Scanner)
+        // Kamera (für QR-Scanner)
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA)
             != PackageManager.PERMISSION_GRANTED
         ) {

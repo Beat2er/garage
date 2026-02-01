@@ -83,7 +83,7 @@ jobs:
           {
             "versionCode": ${VERSION_CODE},
             "versionName": "${VERSION}",
-            "apkUrl": "app/garage-v${VERSION}.apk",
+            "apkUrl": "garage-v${VERSION}.apk",
             "changelog": "Automatischer Build"
           }
           EOF
@@ -94,5 +94,18 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add docs/
           git diff --staged --quiet && echo "No changes" && exit 0
-          git commit -m "Deploy: PWA sync + APK v$(grep 'versionName' android/app/build.gradle.kts | head -1 | grep -oP '"\K[^"]+')"
+          VERSION=$(grep 'versionName' android/app/build.gradle.kts | head -1 | grep -oP '"\K[^"]+')
+          git commit -m "Deploy: PWA sync + APK v${VERSION}"
           git push
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          VERSION=$(grep 'versionName' android/app/build.gradle.kts | head -1 | grep -oP '"\K[^"]+')
+          APK_FILE=$(ls docs/app/garage-v*.apk | head -1)
+          gh release create "v${VERSION}" "$APK_FILE" \
+            --title "v${VERSION}" \
+            --notes "APK Download: [garage-v${VERSION}.apk](https://beat2er.github.io/garage/app/garage-v${VERSION}.apk)" \
+            --latest \
+            || echo "Release v${VERSION} already exists"

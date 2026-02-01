@@ -462,6 +462,32 @@
             display: flex;
         }
 
+        .android-banner.compact {
+            display: flex;
+            border-color: var(--border);
+            padding: 10px 14px;
+            gap: 10px;
+        }
+
+        .android-banner.compact .android-banner-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+        }
+
+        .android-banner.compact .android-banner-icon svg {
+            width: 16px;
+            height: 16px;
+        }
+
+        .android-banner.compact .android-banner-text strong {
+            font-size: 0.75rem;
+        }
+
+        .android-banner.compact .android-banner-text span {
+            display: none;
+        }
+
         .android-banner-icon {
             width: 40px;
             height: 40px;
@@ -709,11 +735,11 @@
                 <svg viewBox="0 0 24 24"><path d="M17.523 2.047l1.41 1.408-2.063 2.066a7.472 7.472 0 012.613 5.062H21v2h-1.517A7.472 7.472 0 0112 19.48a7.472 7.472 0 01-7.483-6.897H3v-2h1.517a7.472 7.472 0 012.613-5.062L5.067 3.455l1.41-1.408 2.355 2.358A7.43 7.43 0 0112 3.52c1.146 0 2.23.26 3.168.885l2.355-2.358zM12 5.52a5.48 5.48 0 00-5.483 5.063V12.583A5.48 5.48 0 0012 17.48a5.48 5.48 0 005.483-4.897V10.583A5.48 5.48 0 0012 5.52zM10 10a1 1 0 110 2 1 1 0 010-2zm4 0a1 1 0 110 2 1 1 0 010-2z"/></svg>
             </div>
             <div class="android-banner-text">
-                <strong>Native App verfuegbar</strong>
+                <strong>Native App verfügbar</strong>
                 <span>Schneller & ohne Browser</span>
             </div>
             <div class="android-banner-actions">
-                <button class="android-banner-btn primary" onclick="openAndroidApp()">Oeffnen</button>
+                <button class="android-banner-btn primary" onclick="openAndroidApp()">Öffnen</button>
                 <button class="android-banner-btn dismiss" onclick="dismissAndroidBanner()">✕</button>
             </div>
         </div>
@@ -1810,16 +1836,25 @@
         function showAndroidBanner() {
             const isAndroid = /Android/i.test(navigator.userAgent);
             const dismissed = localStorage.getItem('android_banner_dismissed');
-            if (isAndroid && !dismissed) {
-                const banner = document.getElementById('androidBanner');
-                if (banner) banner.classList.add('show');
+            const banner = document.getElementById('androidBanner');
+            if (!banner || dismissed) return;
+
+            if (isAndroid) {
+                banner.classList.add('show');
+            } else {
+                banner.classList.add('compact');
             }
         }
 
         function openAndroidApp() {
-            // Intent URL: oeffnet die App falls installiert, sonst Download-Seite
-            window.location = 'intent://#Intent;package=de.beat2er.garage;S.browser_fallback_url=' +
-                encodeURIComponent('https://beat2er.github.io/garage/app/') + ';end';
+            const isAndroid = /Android/i.test(navigator.userAgent);
+            if (isAndroid) {
+                // Intent URL: öffnet die App falls installiert, sonst Download-Seite
+                window.location = 'intent://#Intent;package=de.beat2er.garage;S.browser_fallback_url=' +
+                    encodeURIComponent('https://beat2er.github.io/garage/app/') + ';end';
+            } else {
+                window.open('https://beat2er.github.io/garage/app/', '_blank');
+            }
         }
 
         function dismissAndroidBanner() {

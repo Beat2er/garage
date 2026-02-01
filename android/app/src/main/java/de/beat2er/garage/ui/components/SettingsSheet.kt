@@ -88,7 +88,7 @@ fun SettingsSheet(
 
                     if (debugLogs.isEmpty()) {
                         Text(
-                            text = "Noch keine Log-Eintraege",
+                            text = "Noch keine Log-Einträge",
                             style = MaterialTheme.typography.bodySmall,
                             color = TextDim,
                             modifier = Modifier.padding(vertical = 8.dp)

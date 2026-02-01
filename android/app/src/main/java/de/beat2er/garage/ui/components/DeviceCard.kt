@@ -151,7 +151,7 @@ fun DeviceCard(
             ) {
                 Icon(
                     imageVector = Icons.Rounded.Bolt,
-                    contentDescription = "Ausloesen",
+                    contentDescription = "Auslösen",
                     tint = TextPrimary,
                     modifier = Modifier.size(24.dp)
                 )
