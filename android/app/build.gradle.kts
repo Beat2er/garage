@@ -18,10 +18,21 @@ android {
         buildConfigField("String", "UPDATE_URL", "\"https://beat2er.github.io/garage/app/version.json\"")
     }
 
+    signingConfigs {
+        create("release") {
+            // CI: nutzt Debug-Keystore. Fuer Play Store durch eigenen Keystore ersetzen.
+            storeFile = signingConfigs.getByName("debug").storeFile
+            storePassword = signingConfigs.getByName("debug").storePassword
+            keyAlias = signingConfigs.getByName("debug").keyAlias
+            keyPassword = signingConfigs.getByName("debug").keyPassword
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = true
             isShrinkResources = true
+            signingConfig = signingConfigs.getByName("release")
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"

@@ -446,6 +446,82 @@
             color: var(--accent);
         }
 
+        /* Android App Banner */
+        .android-banner {
+            display: none;
+            background: var(--bg-card);
+            border: 1px solid var(--accent);
+            border-radius: 12px;
+            padding: 14px 16px;
+            margin-bottom: 16px;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .android-banner.show {
+            display: flex;
+        }
+
+        .android-banner-icon {
+            width: 40px;
+            height: 40px;
+            background: var(--bg-dark);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .android-banner-icon svg {
+            width: 22px;
+            height: 22px;
+            fill: var(--accent);
+        }
+
+        .android-banner-text {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .android-banner-text strong {
+            display: block;
+            font-size: 0.85rem;
+            margin-bottom: 2px;
+        }
+
+        .android-banner-text span {
+            font-size: 0.75rem;
+            color: var(--text-dim);
+        }
+
+        .android-banner-actions {
+            display: flex;
+            gap: 6px;
+            flex-shrink: 0;
+        }
+
+        .android-banner-btn {
+            padding: 8px 12px;
+            border-radius: 8px;
+            border: none;
+            font-family: 'Outfit', sans-serif;
+            font-size: 0.75rem;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .android-banner-btn.primary {
+            background: var(--accent);
+            color: white;
+        }
+
+        .android-banner-btn.dismiss {
+            background: transparent;
+            color: var(--text-dim);
+            padding: 8px;
+        }
+
         /* QR Code */
         .qr-container {
             background: white;
@@ -624,6 +700,20 @@
         <div class="header">
             <h1>🚗 Garage</h1>
             <p>Bluetooth Garagentor-Steuerung</p>
+        </div>
+
+        <div class="android-banner" id="androidBanner">
+            <div class="android-banner-icon">
+                <svg viewBox="0 0 24 24"><path d="M17.523 2.047l1.41 1.408-2.063 2.066a7.472 7.472 0 012.613 5.062H21v2h-1.517A7.472 7.472 0 0112 19.48a7.472 7.472 0 01-7.483-6.897H3v-2h1.517a7.472 7.472 0 012.613-5.062L5.067 3.455l1.41-1.408 2.355 2.358A7.43 7.43 0 0112 3.52c1.146 0 2.23.26 3.168.885l2.355-2.358zM12 5.52a5.48 5.48 0 00-5.483 5.063V12.583A5.48 5.48 0 0012 17.48a5.48 5.48 0 005.483-4.897V10.583A5.48 5.48 0 0012 5.52zM10 10a1 1 0 110 2 1 1 0 010-2zm4 0a1 1 0 110 2 1 1 0 010-2z"/></svg>
+            </div>
+            <div class="android-banner-text">
+                <strong>Native App verfuegbar</strong>
+                <span>Schneller & ohne Browser</span>
+            </div>
+            <div class="android-banner-actions">
+                <button class="android-banner-btn primary" onclick="openAndroidApp()">Oeffnen</button>
+                <button class="android-banner-btn dismiss" onclick="dismissAndroidBanner()">✕</button>
+            </div>
         </div>
 
         <div class="device-list" id="deviceList"></div>
@@ -1713,6 +1803,30 @@
         }
         
         // ============================================
+        // Android App Banner
+        // ============================================
+        function showAndroidBanner() {
+            const isAndroid = /Android/i.test(navigator.userAgent);
+            const dismissed = localStorage.getItem('android_banner_dismissed');
+            if (isAndroid && !dismissed) {
+                const banner = document.getElementById('androidBanner');
+                if (banner) banner.classList.add('show');
+            }
+        }
+
+        function openAndroidApp() {
+            // Intent URL: oeffnet die App falls installiert, sonst Download-Seite
+            window.location = 'intent://#Intent;package=de.beat2er.garage;S.browser_fallback_url=' +
+                encodeURIComponent('https://beat2er.github.io/garage/app/') + ';end';
+        }
+
+        function dismissAndroidBanner() {
+            localStorage.setItem('android_banner_dismissed', '1');
+            const banner = document.getElementById('androidBanner');
+            if (banner) banner.classList.remove('show');
+        }
+
+        // ============================================
         // Init
         // ============================================
         debug('Initializing Garage PWA v2.6.0');
@@ -1725,7 +1839,10 @@
 
         loadDevices();
         debug('Loaded', devices.length, 'devices from storage');
-        
+
+        // Android App Banner
+        showAndroidBanner();
+
         // Check if URL contains import data
         checkUrlImport();
         
