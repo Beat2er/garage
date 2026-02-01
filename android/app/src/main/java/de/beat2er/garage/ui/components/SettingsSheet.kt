@@ -1,27 +1,29 @@
 package de.beat2er.garage.ui.components
 
-import android.util.Base64
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalClipboardManager
-import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import de.beat2er.garage.ui.theme.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsSheet(
     onDismiss: () -> Unit,
-    exportConfig: () -> String,
-    onImport: (String) -> Int,
-    onShowToast: (String, Boolean) -> Unit
+    debugMode: Boolean,
+    debugLogs: List<String>,
+    onToggleDebug: () -> Unit,
+    onClearLogs: () -> Unit
 ) {
-    val clipboardManager = LocalClipboardManager.current
-
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         containerColor = BgCard,
@@ -41,69 +43,91 @@ fun SettingsSheet(
                 color = TextPrimary
             )
 
-            // Teilen Sektion
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Text(
-                    text = "KONFIGURATION TEILEN",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = TextDim
-                )
-
-                Text(
-                    text = "Exportiere deine Geraete als Link (ohne Passwoerter)",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = TextDim
-                )
-
-                OutlinedButton(
-                    onClick = {
-                        val config = exportConfig()
-                        val base64 = Base64.encodeToString(
-                            config.toByteArray(Charsets.UTF_8),
-                            Base64.NO_WRAP
-                        )
-                        clipboardManager.setText(AnnotatedString(base64))
-                        onShowToast("Link kopiert", false)
-                    },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(50.dp),
-                    shape = RoundedCornerShape(10.dp),
-                    colors = ButtonDefaults.outlinedButtonColors(contentColor = TextPrimary),
-                    border = androidx.compose.foundation.BorderStroke(1.dp, Border)
-                ) {
-                    Text("Konfiguration exportieren")
+            // Debug Toggle
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Column {
+                    Text(
+                        text = "DEBUG-LOGGING",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = TextDim
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = "Zeigt detaillierte BLE-Logs",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = TextDim
+                    )
                 }
+                Switch(
+                    checked = debugMode,
+                    onCheckedChange = { onToggleDebug() },
+                    colors = SwitchDefaults.colors(
+                        checkedThumbColor = TextPrimary,
+                        checkedTrackColor = Accent,
+                        uncheckedThumbColor = TextDim,
+                        uncheckedTrackColor = BgDark,
+                        uncheckedBorderColor = Border
+                    )
+                )
+            }
 
-                OutlinedButton(
-                    onClick = {
-                        val clip = clipboardManager.getText()?.text
-                        if (clip != null) {
-                            try {
-                                val json = if (clip.contains("#import=")) {
-                                    val b64 = clip.substringAfter("#import=")
-                                    String(Base64.decode(b64, Base64.DEFAULT), Charsets.UTF_8)
-                                } else if (!clip.startsWith("{")) {
-                                    String(Base64.decode(clip, Base64.DEFAULT), Charsets.UTF_8)
-                                } else {
-                                    clip
+            // Debug Log Viewer
+            if (debugMode) {
+                HorizontalDivider(color = Border)
+
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(
+                        text = "DEBUG LOG",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = TextDim
+                    )
+
+                    if (debugLogs.isEmpty()) {
+                        Text(
+                            text = "Noch keine Log-Eintraege",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = TextDim,
+                            modifier = Modifier.padding(vertical = 8.dp)
+                        )
+                    } else {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .heightIn(max = 200.dp)
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(BgDark)
+                                .padding(12.dp)
+                        ) {
+                            LazyColumn(
+                                verticalArrangement = Arrangement.spacedBy(2.dp)
+                            ) {
+                                items(debugLogs) { log ->
+                                    Text(
+                                        text = log,
+                                        style = MaterialTheme.typography.labelMedium.copy(
+                                            fontFamily = FontFamily.Monospace,
+                                            fontSize = 10.sp
+                                        ),
+                                        color = TextDim
+                                    )
                                 }
-                                onImport(json)
-                            } catch (e: Exception) {
-                                onShowToast("Import fehlgeschlagen", true)
                             }
-                        } else {
-                            onShowToast("Zwischenablage leer", true)
                         }
-                    },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(50.dp),
-                    shape = RoundedCornerShape(10.dp),
-                    colors = ButtonDefaults.outlinedButtonColors(contentColor = TextPrimary),
-                    border = androidx.compose.foundation.BorderStroke(1.dp, Border)
-                ) {
-                    Text("Aus Zwischenablage importieren")
+
+                        OutlinedButton(
+                            onClick = onClearLogs,
+                            modifier = Modifier.fillMaxWidth().height(40.dp),
+                            shape = RoundedCornerShape(8.dp),
+                            colors = ButtonDefaults.outlinedButtonColors(contentColor = TextDim),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, Border)
+                        ) {
+                            Text("Log leeren", fontSize = 12.sp)
+                        }
+                    }
                 }
             }
 

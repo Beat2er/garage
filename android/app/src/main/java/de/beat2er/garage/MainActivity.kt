@@ -20,14 +20,14 @@ import de.beat2er.garage.viewmodel.GarageViewModel
 
 class MainActivity : ComponentActivity() {
 
-    private val bluetoothPermissionLauncher = registerForActivityResult(
+    private val permissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
     ) { /* Permissions handled */ }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        requestBluetoothPermissions()
+        requestPermissions()
 
         setContent {
             GarageTheme {
@@ -43,15 +43,21 @@ class MainActivity : ComponentActivity() {
                     onImportDevices = viewModel::importDevices,
                     onExportConfig = viewModel::getExportConfig,
                     onClearToast = viewModel::clearToast,
+                    onStartScan = viewModel::startBleScan,
+                    onStopScan = viewModel::stopBleScan,
+                    onToggleDebug = viewModel::toggleDebugMode,
+                    onClearLogs = viewModel::clearDebugLogs,
+                    onShowToast = viewModel::showToast,
                     modifier = Modifier.fillMaxSize()
                 )
             }
         }
     }
 
-    private fun requestBluetoothPermissions() {
+    private fun requestPermissions() {
         val permissions = mutableListOf<String>()
 
+        // Bluetooth
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             if (ContextCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT)
                 != PackageManager.PERMISSION_GRANTED
@@ -71,8 +77,15 @@ class MainActivity : ComponentActivity() {
             }
         }
 
+        // Kamera (fuer QR-Scanner)
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA)
+            != PackageManager.PERMISSION_GRANTED
+        ) {
+            permissions.add(Manifest.permission.CAMERA)
+        }
+
         if (permissions.isNotEmpty()) {
-            bluetoothPermissionLauncher.launch(permissions.toTypedArray())
+            permissionLauncher.launch(permissions.toTypedArray())
         }
     }
 }

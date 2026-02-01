@@ -10,6 +10,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.Garage
 import androidx.compose.material.icons.rounded.Settings
+import androidx.compose.material.icons.rounded.Share
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -26,6 +27,7 @@ import de.beat2er.garage.ui.components.AddDeviceSheet
 import de.beat2er.garage.ui.components.DeviceCard
 import de.beat2er.garage.ui.components.EditDeviceSheet
 import de.beat2er.garage.ui.components.SettingsSheet
+import de.beat2er.garage.ui.components.ShareSheet
 import de.beat2er.garage.ui.theme.*
 import de.beat2er.garage.viewmodel.DeviceUiState
 import de.beat2er.garage.viewmodel.GarageUiState
@@ -40,9 +42,15 @@ fun HomeScreen(
     onImportDevices: (String) -> Int,
     onExportConfig: () -> String,
     onClearToast: () -> Unit,
+    onStartScan: () -> Unit,
+    onStopScan: () -> Unit,
+    onToggleDebug: () -> Unit,
+    onClearLogs: () -> Unit,
+    onShowToast: (String, Boolean) -> Unit,
     modifier: Modifier = Modifier
 ) {
     var showAddSheet by remember { mutableStateOf(false) }
+    var showShareSheet by remember { mutableStateOf(false) }
     var showSettingsSheet by remember { mutableStateOf(false) }
     var editingDevice by remember { mutableStateOf<Device?>(null) }
 
@@ -58,15 +66,7 @@ fun HomeScreen(
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(
-                Brush.verticalGradient(
-                    colors = listOf(
-                        BgDark,
-                        BgDark,
-                        BgDark
-                    )
-                )
-            )
+            .background(BgDark)
     ) {
         // Subtiler Glow-Effekt wie in der PWA
         Box(
@@ -111,7 +111,6 @@ fun HomeScreen(
 
             // Content
             if (uiState.devices.isEmpty()) {
-                // Empty State
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -142,7 +141,6 @@ fun HomeScreen(
                     )
                 }
             } else {
-                // Device List
                 LazyColumn(
                     modifier = Modifier
                         .weight(1f)
@@ -197,13 +195,27 @@ fun HomeScreen(
                 ),
                 border = androidx.compose.foundation.BorderStroke(1.dp, Border)
             ) {
-                Icon(
-                    imageVector = Icons.Rounded.Add,
-                    contentDescription = null,
-                    modifier = Modifier.size(18.dp)
-                )
+                Icon(Icons.Rounded.Add, contentDescription = null, modifier = Modifier.size(18.dp))
                 Spacer(modifier = Modifier.width(8.dp))
                 Text("Hinzufuegen", style = MaterialTheme.typography.bodyMedium)
+            }
+
+            // Teilen
+            OutlinedButton(
+                onClick = { showShareSheet = true },
+                modifier = Modifier
+                    .weight(1f)
+                    .height(50.dp),
+                shape = RoundedCornerShape(12.dp),
+                colors = ButtonDefaults.outlinedButtonColors(
+                    containerColor = BgCard,
+                    contentColor = TextPrimary
+                ),
+                border = androidx.compose.foundation.BorderStroke(1.dp, Border)
+            ) {
+                Icon(Icons.Rounded.Share, contentDescription = null, modifier = Modifier.size(18.dp))
+                Spacer(modifier = Modifier.width(8.dp))
+                Text("Teilen", style = MaterialTheme.typography.bodyMedium)
             }
 
             // Einstellungen
@@ -218,11 +230,7 @@ fun HomeScreen(
                 border = androidx.compose.foundation.BorderStroke(1.dp, Border),
                 contentPadding = PaddingValues(horizontal = 14.dp)
             ) {
-                Icon(
-                    imageVector = Icons.Rounded.Settings,
-                    contentDescription = "Einstellungen",
-                    modifier = Modifier.size(18.dp)
-                )
+                Icon(Icons.Rounded.Settings, contentDescription = "Einstellungen", modifier = Modifier.size(18.dp))
             }
         }
 
@@ -261,7 +269,11 @@ fun HomeScreen(
     if (showAddSheet) {
         AddDeviceSheet(
             onDismiss = { showAddSheet = false },
-            onAdd = onAddDevice
+            onAdd = onAddDevice,
+            isScanning = uiState.isScanning,
+            scanResults = uiState.scanResults,
+            onStartScan = onStartScan,
+            onStopScan = onStopScan
         )
     }
 
@@ -274,14 +286,22 @@ fun HomeScreen(
         )
     }
 
+    if (showShareSheet) {
+        ShareSheet(
+            onDismiss = { showShareSheet = false },
+            exportConfig = onExportConfig,
+            onImport = onImportDevices,
+            onShowToast = onShowToast
+        )
+    }
+
     if (showSettingsSheet) {
         SettingsSheet(
             onDismiss = { showSettingsSheet = false },
-            exportConfig = onExportConfig,
-            onImport = onImportDevices,
-            onShowToast = { msg, isError ->
-                // Handled through ViewModel
-            }
+            debugMode = uiState.debugMode,
+            debugLogs = uiState.debugLogs,
+            onToggleDebug = onToggleDebug,
+            onClearLogs = onClearLogs
         )
     }
 }
