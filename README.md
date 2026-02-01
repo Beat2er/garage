@@ -19,7 +19,8 @@ garage-complete/
 │       ├── data/           # Datenmodelle + Repository
 │       ├── ui/             # Compose UI (Screens, Components, Theme)
 │       ├── update/         # Auto-Update Prüfung
-│       └── viewmodel/      # ViewModel + State
+│       ├── viewmodel/      # ViewModel + State
+│       └── widget/         # Home Screen Widget (Jetpack Glance)
 │
 ├── docs/                   # GitHub Pages Deployment
 │   ├── index.html          # PWA (deployed)
@@ -138,6 +139,7 @@ Native Android App mit Jetpack Compose:
 - QR-Code Import/Export
 - Auto-Update Erkennung
 - Debug-Logging
+- Home Screen Widget (1-Tap Trigger via ForegroundService)
 
 ### Shelly Script (shelly-script/)
 

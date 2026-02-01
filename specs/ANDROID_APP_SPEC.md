@@ -521,657 +521,456 @@ object ShellyAuth {
 
 ---
 
-## Home Screen Widgets
+## Home Screen Widget (Jetpack Glance)
 
-### Widget-Typen
+> **Hinweis:** Die Implementierung nutzt Jetpack Glance (1.1.1) statt RemoteViews.
+> Glance bietet eine Compose-Style API, DataStore-basierten State pro Widget-Instanz
+> und suspend-fähige ActionCallbacks.
+
+### Widget-Typ
+
+Ein resizable Single-Device Widget (1x1 Standard, resizable bis 4x4).
+User platziert es, wählt ein Gerät, tippt zum Auslösen.
 
 | Widget | Größe | Funktion |
 |--------|-------|----------|
-| **Single Device** | 1x1 | Ein Gerät triggern |
-| **Single Device Large** | 2x2 | Mit Status-Anzeige |
-| **Multi Device** | 4x2 | Liste aller Geräte |
+| **Garage Widget** | 1x1 (resizable) | Ein Gerät triggern mit Status-Anzeige |
 
-### Widget Provider
+### Architektur
 
-#### widget_info.xml (res/xml/)
+```
+widget/
+├── WidgetKeys.kt           # DataStore Preference Keys + Status-Konstanten
+├── GarageWidget.kt         # GlanceAppWidget UI + Auto-Config
+├── GarageWidgetReceiver.kt # GlanceAppWidgetReceiver Bridge
+├── TriggerAction.kt        # ActionCallback → startet ForegroundService
+├── WidgetTriggerService.kt # ForegroundService für BLE-Operationen
+└── WidgetConfigActivity.kt # Compose Activity für Gerätewahl
+```
+
+### Widget-Info (res/xml/garage_widget_info.xml)
 
 ```xml
-<!-- Single Device Widget 1x1 -->
 <appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
-    android:minWidth="40dp"
-    android:minHeight="40dp"
+    android:minWidth="57dp"
+    android:minHeight="57dp"
+    android:minResizeWidth="57dp"
+    android:minResizeHeight="57dp"
     android:targetCellWidth="1"
     android:targetCellHeight="1"
+    android:resizeMode="horizontal|vertical"
     android:updatePeriodMillis="0"
-    android:initialLayout="@layout/widget_single"
+    android:previewLayout="@layout/garage_widget_preview"
     android:configure="de.beat2er.garage.widget.WidgetConfigActivity"
     android:widgetCategory="home_screen"
-    android:resizeMode="none"
     android:widgetFeatures="reconfigurable"
-    android:previewImage="@drawable/widget_preview_single"
-    android:description="@string/widget_single_description" />
-
-<!-- Single Device Widget 2x2 with status -->
-<appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
-    android:minWidth="110dp"
-    android:minHeight="110dp"
-    android:targetCellWidth="2"
-    android:targetCellHeight="2"
-    android:updatePeriodMillis="1800000"
-    android:initialLayout="@layout/widget_single_large"
-    android:configure="de.beat2er.garage.widget.WidgetConfigActivity"
-    android:widgetCategory="home_screen"
-    android:resizeMode="horizontal|vertical"
-    android:previewImage="@drawable/widget_preview_large" />
-
-<!-- Multi Device Widget 4x2 -->
-<appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
-    android:minWidth="250dp"
-    android:minHeight="110dp"
-    android:targetCellWidth="4"
-    android:targetCellHeight="2"
-    android:updatePeriodMillis="1800000"
-    android:initialLayout="@layout/widget_multi"
-    android:widgetCategory="home_screen"
-    android:resizeMode="horizontal|vertical"
-    android:previewImage="@drawable/widget_preview_multi" />
+    android:description="@string/widget_description" />
 ```
 
-### Widget Layouts
+### State Management (Glance DataStore)
 
-#### widget_single.xml (1x1 Quick Trigger)
-
-```xml
-<?xml version="1.0" encoding="utf-8"?>
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:padding="4dp">
-
-    <ImageButton
-        android:id="@+id/btnTrigger"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:background="@drawable/widget_button_background"
-        android:src="@drawable/ic_garage"
-        android:scaleType="centerInside"
-        android:padding="12dp"
-        android:contentDescription="@string/trigger_garage" />
-
-    <!-- Status indicator dot -->
-    <View
-        android:id="@+id/statusDot"
-        android:layout_width="8dp"
-        android:layout_height="8dp"
-        android:layout_gravity="top|end"
-        android:layout_margin="8dp"
-        android:background="@drawable/status_dot_disconnected" />
-
-</FrameLayout>
-```
-
-#### widget_single_large.xml (2x2 with Status)
-
-```xml
-<?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:padding="8dp"
-    android:background="@drawable/widget_background"
-    android:gravity="center">
-
-    <!-- Device Icon -->
-    <ImageView
-        android:id="@+id/imgIcon"
-        android:layout_width="48dp"
-        android:layout_height="48dp"
-        android:src="@drawable/ic_garage"
-        android:tint="#e94560" />
-
-    <!-- Device Name -->
-    <TextView
-        android:id="@+id/txtName"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
-        android:gravity="center"
-        android:textColor="#eaeaea"
-        android:textSize="14sp"
-        android:textStyle="bold"
-        android:maxLines="1"
-        android:ellipsize="end"
-        android:text="Garage" />
-
-    <!-- Status -->
-    <TextView
-        android:id="@+id/txtStatus"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:gravity="center"
-        android:textColor="#6b6b7b"
-        android:textSize="11sp"
-        android:text="Tippen zum Auslösen" />
-
-    <!-- Trigger Button -->
-    <Button
-        android:id="@+id/btnTrigger"
-        android:layout_width="match_parent"
-        android:layout_height="40dp"
-        android:layout_marginTop="8dp"
-        android:background="@drawable/widget_button_accent"
-        android:text="⚡ Auslösen"
-        android:textColor="@android:color/white"
-        android:textSize="12sp" />
-
-</LinearLayout>
-```
-
-#### widget_multi.xml (4x2 Multi Device)
-
-```xml
-<?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:padding="8dp"
-    android:background="@drawable/widget_background">
-
-    <!-- Header -->
-    <TextView
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="🚗 Garage"
-        android:textColor="#eaeaea"
-        android:textSize="14sp"
-        android:textStyle="bold"
-        android:paddingBottom="8dp" />
-
-    <!-- Device Buttons Container -->
-    <LinearLayout
-        android:id="@+id/deviceContainer"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:orientation="horizontal"
-        android:gravity="center">
-
-        <!-- Dynamically filled with device buttons -->
-        <!-- Each button: 64dp x match_parent -->
-
-    </LinearLayout>
-
-</LinearLayout>
-```
-
-#### widget_device_button.xml (für Multi-Widget)
-
-```xml
-<?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="0dp"
-    android:layout_height="match_parent"
-    android:layout_weight="1"
-    android:layout_margin="4dp"
-    android:orientation="vertical"
-    android:gravity="center"
-    android:background="@drawable/widget_device_button"
-    android:padding="8dp">
-
-    <ImageView
-        android:id="@+id/imgIcon"
-        android:layout_width="32dp"
-        android:layout_height="32dp"
-        android:src="@drawable/ic_garage"
-        android:tint="#e94560" />
-
-    <TextView
-        android:id="@+id/txtName"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="4dp"
-        android:gravity="center"
-        android:textColor="#eaeaea"
-        android:textSize="10sp"
-        android:maxLines="1"
-        android:ellipsize="end" />
-
-</LinearLayout>
-```
-
-### Drawables
-
-#### widget_background.xml
-
-```xml
-<?xml version="1.0" encoding="utf-8"?>
-<shape xmlns:android="http://schemas.android.com/apk/res/android"
-    android:shape="rectangle">
-    <solid android:color="#CC1a1a2e" />
-    <corners android:radius="16dp" />
-</shape>
-```
-
-#### widget_button_background.xml
-
-```xml
-<?xml version="1.0" encoding="utf-8"?>
-<selector xmlns:android="http://schemas.android.com/apk/res/android">
-    <item android:state_pressed="true">
-        <shape android:shape="rectangle">
-            <solid android:color="#d63d56" />
-            <corners android:radius="16dp" />
-        </shape>
-    </item>
-    <item>
-        <shape android:shape="rectangle">
-            <solid android:color="#e94560" />
-            <corners android:radius="16dp" />
-        </shape>
-    </item>
-</selector>
-```
-
-#### widget_button_accent.xml
-
-```xml
-<?xml version="1.0" encoding="utf-8"?>
-<selector xmlns:android="http://schemas.android.com/apk/res/android">
-    <item android:state_pressed="true">
-        <shape android:shape="rectangle">
-            <solid android:color="#d63d56" />
-            <corners android:radius="8dp" />
-        </shape>
-    </item>
-    <item>
-        <shape android:shape="rectangle">
-            <solid android:color="#e94560" />
-            <corners android:radius="8dp" />
-        </shape>
-    </item>
-</selector>
-```
-
-#### status_dot_connected.xml
-
-```xml
-<?xml version="1.0" encoding="utf-8"?>
-<shape xmlns:android="http://schemas.android.com/apk/res/android"
-    android:shape="oval">
-    <solid android:color="#4ade80" />
-</shape>
-```
-
-#### status_dot_disconnected.xml
-
-```xml
-<?xml version="1.0" encoding="utf-8"?>
-<shape xmlns:android="http://schemas.android.com/apk/res/android"
-    android:shape="oval">
-    <solid android:color="#6b6b7b" />
-</shape>
-```
-
-### Widget Provider Implementation
-
-#### GarageWidgetProvider.kt
+Jede Widget-Instanz hat eigenen State via `PreferencesGlanceStateDefinition`:
 
 ```kotlin
-class GarageWidgetProvider : AppWidgetProvider() {
+object WidgetKeys {
+    val DEVICE_ID = stringPreferencesKey("device_id")
+    val DEVICE_NAME = stringPreferencesKey("device_name")
+    val DEVICE_MAC = stringPreferencesKey("device_mac")
+    val DEVICE_PASSWORD = stringPreferencesKey("device_password")
+    val DEVICE_SWITCH_ID = stringPreferencesKey("device_switch_id")
+    val APP_WIDGET_ID = stringPreferencesKey("app_widget_id")
+    val STATUS = stringPreferencesKey("status")       // idle|connecting|triggered|error
+    val STATUS_TEXT = stringPreferencesKey("status_text")
+}
+```
 
-    override fun onUpdate(
-        context: Context,
-        appWidgetManager: AppWidgetManager,
-        appWidgetIds: IntArray
-    ) {
-        for (appWidgetId in appWidgetIds) {
-            updateWidget(context, appWidgetManager, appWidgetId)
+### BLE-Trigger via ForegroundService
+
+**Problem:** `ActionCallback.onAction()` läuft intern in einem `BroadcastReceiver`.
+BLE-Operationen (15-25s) dauern länger als das ~10s Zeitfenster. Der Prozess wird
+deprioritisiert/gekillt bevor GATT-Callbacks feuern.
+
+**Lösung:** Widget-Tap startet einen `ForegroundService` mit `connectedDevice`-Typ.
+Widget-Interaktionen sind von Androids FG-Service-Startrestriktionen (Android 12+) ausgenommen.
+
+```
+Widget-Tap
+  → TriggerAction.onAction()           [ActionCallback, ~ms]
+    → Status → "Verbinde..."
+    → context.startForegroundService()
+      → WidgetTriggerService            [ForegroundService, bis 25s]
+        → Notification anzeigen
+        → ShellyBleManager.connect()    [Direktverbindung oder Scan-Fallback]
+        → triggerSwitch()
+        → Status → "Ausgelöst!" / Fehler
+        → 3s warten → Status → "Tippen zum Auslösen"
+        → stopSelf()
+```
+
+### Auto-Config (Pin aus App-Settings)
+
+Zwei Pfade für zuverlässige Auto-Konfiguration:
+
+1. **`GarageWidget.provideGlance()`** prüft beim Rendern ob `pending_widget_device`
+   in SharedPreferences existiert und das Widget noch unkonfiguriert ist → auto-konfiguriert
+2. **`WidgetConfigActivity`** prüft ob das Widget bereits konfiguriert ist → schließt
+   sich sofort mit `RESULT_OK`
+
+```
+App-Settings → "Widget hinzufügen"
+  → pending_widget_device in SharedPreferences speichern
+  → requestPinAppWidget()
+  → Launcher platziert Widget
+  → provideGlance() → auto-konfiguriert aus SharedPreferences
+  → Falls Config-Activity öffnet → erkennt bereits konfiguriert → RESULT_OK + finish()
+```
+
+### GarageWidgetReceiver.kt
+
+```kotlin
+class GarageWidgetReceiver : GlanceAppWidgetReceiver() {
+    override val glanceAppWidget = GarageWidget()
+}
+```
+
+### GarageWidget.kt
+
+```kotlin
+class GarageWidget : GlanceAppWidget() {
+
+    override suspend fun provideGlance(context: Context, id: GlanceId) {
+        // Auto-config: check for pending device from pin-from-settings
+        tryAutoConfig(context, id)
+        provideContent { GarageWidgetContent() }
+    }
+
+    private suspend fun tryAutoConfig(context: Context, glanceId: GlanceId) {
+        val settingsPrefs = context.getSharedPreferences("garage_settings", Context.MODE_PRIVATE)
+        val pendingDeviceId = settingsPrefs.getString("pending_widget_device", null) ?: return
+
+        val state = getAppWidgetState(context, PreferencesGlanceStateDefinition, glanceId)
+        if (state[WidgetKeys.DEVICE_NAME] != null) return  // Already configured
+
+        settingsPrefs.edit().remove("pending_widget_device").commit()
+        val device = DeviceRepository(context).getDevices()
+            .find { it.id == pendingDeviceId } ?: return
+
+        // Resolve appWidgetId for this glanceId
+        val manager = GlanceAppWidgetManager(context)
+        val appWidgetIds = AppWidgetManager.getInstance(context)
+            .getAppWidgetIds(ComponentName(context, GarageWidgetReceiver::class.java))
+        var appWidgetId = -1
+        for (wId in appWidgetIds) {
+            if (manager.getGlanceIdBy(wId) == glanceId) { appWidgetId = wId; break }
+        }
+
+        updateAppWidgetState(context, PreferencesGlanceStateDefinition, glanceId) { prefs ->
+            prefs.toMutablePreferences().apply {
+                this[WidgetKeys.DEVICE_ID] = device.id
+                this[WidgetKeys.DEVICE_NAME] = device.name
+                this[WidgetKeys.DEVICE_MAC] = device.mac
+                this[WidgetKeys.DEVICE_PASSWORD] = device.password
+                this[WidgetKeys.DEVICE_SWITCH_ID] = device.switchId.toString()
+                if (appWidgetId != -1) this[WidgetKeys.APP_WIDGET_ID] = appWidgetId.toString()
+                this[WidgetKeys.STATUS] = WidgetStatus.IDLE
+                this[WidgetKeys.STATUS_TEXT] = "Tippen zum Auslösen"
+            }
         }
     }
 
-    override fun onReceive(context: Context, intent: Intent) {
-        super.onReceive(context, intent)
-        
-        when (intent.action) {
-            ACTION_TRIGGER -> {
-                val deviceMac = intent.getStringExtra(EXTRA_DEVICE_MAC) ?: return
-                val widgetId = intent.getIntExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, -1)
-                
-                // Trigger in background
-                CoroutineScope(Dispatchers.IO).launch {
-                    triggerDevice(context, deviceMac, widgetId)
-                }
-            }
-            ACTION_UPDATE_STATUS -> {
-                val widgetId = intent.getIntExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, -1)
-                if (widgetId != -1) {
-                    val appWidgetManager = AppWidgetManager.getInstance(context)
-                    updateWidget(context, appWidgetManager, widgetId)
-                }
-            }
+    @Composable
+    private fun GarageWidgetContent() {
+        val state = currentState<Preferences>()
+        val deviceName = state[WidgetKeys.DEVICE_NAME]
+        val status = state[WidgetKeys.STATUS] ?: WidgetStatus.IDLE
+        val statusText = state[WidgetKeys.STATUS_TEXT] ?: "Tippen zum Auslösen"
+
+        val statusColor = when (status) {
+            WidgetStatus.CONNECTING -> ColorProvider(Warning)
+            WidgetStatus.TRIGGERED -> ColorProvider(Success)
+            WidgetStatus.ERROR -> ColorProvider(Accent)
+            else -> ColorProvider(TextDim)
         }
-    }
 
-    private fun updateWidget(
-        context: Context,
-        appWidgetManager: AppWidgetManager,
-        appWidgetId: Int
-    ) {
-        val prefs = context.getSharedPreferences("widget_$appWidgetId", Context.MODE_PRIVATE)
-        val deviceMac = prefs.getString("device_mac", null) ?: return
-        val deviceName = prefs.getString("device_name", "Garage") ?: "Garage"
-
-        val views = RemoteViews(context.packageName, R.layout.widget_single_large)
-        
-        // Set device name
-        views.setTextViewText(R.id.txtName, deviceName)
-        
-        // Set click action
-        val triggerIntent = Intent(context, GarageWidgetProvider::class.java).apply {
-            action = ACTION_TRIGGER
-            putExtra(EXTRA_DEVICE_MAC, deviceMac)
-            putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId)
-        }
-        val triggerPendingIntent = PendingIntent.getBroadcast(
-            context,
-            appWidgetId,
-            triggerIntent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        )
-        views.setOnClickPendingIntent(R.id.btnTrigger, triggerPendingIntent)
-        
-        // Also make whole widget clickable
-        views.setOnClickPendingIntent(R.id.imgIcon, triggerPendingIntent)
-
-        appWidgetManager.updateAppWidget(appWidgetId, views)
-    }
-
-    private suspend fun triggerDevice(context: Context, mac: String, widgetId: Int) {
-        val appWidgetManager = AppWidgetManager.getInstance(context)
-        val views = RemoteViews(context.packageName, R.layout.widget_single_large)
-        
-        // Show "Verbinde..." status
-        views.setTextViewText(R.id.txtStatus, "Verbinde...")
-        appWidgetManager.partiallyUpdateAppWidget(widgetId, views)
-        
-        try {
-            val bleManager = ShellyBleManager(context)
-            val prefs = context.getSharedPreferences("widget_$widgetId", Context.MODE_PRIVATE)
-            val password = prefs.getString("device_password", null)
-            
-            // Connect and trigger
-            val result = withTimeout(15000) {
-                suspendCancellableCoroutine<Boolean> { continuation ->
-                    bleManager.connect(mac, object : ShellyBleManager.ConnectionCallback {
-                        override fun onConnected() {
-                            CoroutineScope(Dispatchers.IO).launch {
-                                try {
-                                    val success = bleManager.triggerSwitch(0, password)
-                                    bleManager.disconnect()
-                                    continuation.resume(success) {}
-                                } catch (e: Exception) {
-                                    continuation.resume(false) {}
-                                }
-                            }
-                        }
-                        
-                        override fun onDisconnected() {}
-                        
-                        override fun onError(message: String) {
-                            continuation.resume(false) {}
-                        }
-                    })
+        Box(
+            modifier = GlanceModifier.fillMaxSize().cornerRadius(16.dp)
+                .background(BgCard).clickable(actionRunCallback<TriggerAction>()).padding(8.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            if (deviceName != null) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(text = deviceName, style = TextStyle(
+                        color = ColorProvider(TextPrimary), fontSize = 14.sp,
+                        fontWeight = FontWeight.Bold), maxLines = 1)
+                    Spacer(modifier = GlanceModifier.height(4.dp))
+                    Text(text = statusText, style = TextStyle(
+                        color = statusColor, fontSize = 11.sp), maxLines = 2)
                 }
-            }
-            
-            // Update status
-            if (result) {
-                views.setTextViewText(R.id.txtStatus, "✓ Ausgelöst!")
-                views.setInt(R.id.txtStatus, "setTextColor", Color.parseColor("#4ade80"))
             } else {
-                views.setTextViewText(R.id.txtStatus, "✗ Fehler")
-                views.setInt(R.id.txtStatus, "setTextColor", Color.parseColor("#e94560"))
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(text = "Kein Gerät", style = TextStyle(
+                        color = ColorProvider(TextDim), fontSize = 14.sp))
+                    Text(text = "Lange drücken\nzum Einrichten", style = TextStyle(
+                        color = ColorProvider(TextDim), fontSize = 11.sp))
+                }
             }
-            
-        } catch (e: TimeoutCancellationException) {
-            views.setTextViewText(R.id.txtStatus, "✗ Timeout")
-            views.setInt(R.id.txtStatus, "setTextColor", Color.parseColor("#e94560"))
-        } catch (e: Exception) {
-            views.setTextViewText(R.id.txtStatus, "✗ ${e.message}")
-            views.setInt(R.id.txtStatus, "setTextColor", Color.parseColor("#e94560"))
         }
-        
-        appWidgetManager.partiallyUpdateAppWidget(widgetId, views)
-        
-        // Reset status after 3 seconds
-        delay(3000)
-        views.setTextViewText(R.id.txtStatus, "Tippen zum Auslösen")
-        views.setInt(R.id.txtStatus, "setTextColor", Color.parseColor("#6b6b7b"))
-        appWidgetManager.partiallyUpdateAppWidget(widgetId, views)
-    }
-
-    override fun onDeleted(context: Context, appWidgetIds: IntArray) {
-        // Clean up preferences
-        for (appWidgetId in appWidgetIds) {
-            context.getSharedPreferences("widget_$appWidgetId", Context.MODE_PRIVATE)
-                .edit().clear().apply()
-        }
-    }
-
-    companion object {
-        const val ACTION_TRIGGER = "de.beat2er.garage.ACTION_TRIGGER"
-        const val ACTION_UPDATE_STATUS = "de.beat2er.garage.ACTION_UPDATE_STATUS"
-        const val EXTRA_DEVICE_MAC = "device_mac"
     }
 }
 ```
 
-### Widget Configuration Activity
-
-#### WidgetConfigActivity.kt
+### TriggerAction.kt
 
 ```kotlin
-class WidgetConfigActivity : AppCompatActivity() {
-    
+class TriggerAction : ActionCallback {
+    override suspend fun onAction(context: Context, glanceId: GlanceId, parameters: ActionParameters) {
+        val prefs = getAppWidgetState(context, PreferencesGlanceStateDefinition, glanceId)
+
+        if (prefs[WidgetKeys.STATUS] == WidgetStatus.CONNECTING) return  // Debounce
+        val deviceMac = prefs[WidgetKeys.DEVICE_MAC] ?: return
+        val appWidgetId = prefs[WidgetKeys.APP_WIDGET_ID]?.toIntOrNull() ?: return
+
+        // Visual feedback immediately
+        updateAppWidgetState(context, PreferencesGlanceStateDefinition, glanceId) { p ->
+            p.toMutablePreferences().apply {
+                this[WidgetKeys.STATUS] = WidgetStatus.CONNECTING
+                this[WidgetKeys.STATUS_TEXT] = "Verbinde..."
+            }
+        }
+        GarageWidget().update(context, glanceId)
+
+        // Start ForegroundService for BLE (keeps process alive)
+        val intent = Intent(context, WidgetTriggerService::class.java).apply {
+            putExtra(WidgetTriggerService.EXTRA_APP_WIDGET_ID, appWidgetId)
+            putExtra(WidgetTriggerService.EXTRA_DEVICE_NAME, prefs[WidgetKeys.DEVICE_NAME])
+            putExtra(WidgetTriggerService.EXTRA_DEVICE_MAC, deviceMac)
+            putExtra(WidgetTriggerService.EXTRA_DEVICE_PASSWORD, prefs[WidgetKeys.DEVICE_PASSWORD])
+            putExtra(WidgetTriggerService.EXTRA_DEVICE_SWITCH_ID,
+                prefs[WidgetKeys.DEVICE_SWITCH_ID]?.toIntOrNull() ?: 0)
+        }
+        context.startForegroundService(intent)
+    }
+}
+```
+
+### WidgetTriggerService.kt
+
+```kotlin
+@SuppressLint("MissingPermission")
+class WidgetTriggerService : Service() {
+    companion object {
+        private const val CHANNEL_ID = "widget_trigger"
+        private const val NOTIFICATION_ID = 1001
+        private const val TRIGGER_TIMEOUT_MS = 25_000L
+        private const val RESET_DELAY_MS = 3_000L
+        const val EXTRA_APP_WIDGET_ID = "app_widget_id"
+        const val EXTRA_DEVICE_NAME = "device_name"
+        const val EXTRA_DEVICE_MAC = "device_mac"
+        const val EXTRA_DEVICE_PASSWORD = "device_password"
+        const val EXTRA_DEVICE_SWITCH_ID = "device_switch_id"
+    }
+
+    private val scope = CoroutineScope(Dispatchers.Main + SupervisorJob())
+
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        val appWidgetId = intent?.getIntExtra(EXTRA_APP_WIDGET_ID, -1) ?: -1
+        val deviceMac = intent?.getStringExtra(EXTRA_DEVICE_MAC) ?: ""
+        val deviceName = intent?.getStringExtra(EXTRA_DEVICE_NAME) ?: "?"
+        val password = intent?.getStringExtra(EXTRA_DEVICE_PASSWORD)
+        val switchId = intent?.getIntExtra(EXTRA_DEVICE_SWITCH_ID, 0) ?: 0
+
+        // Start foreground immediately (connectedDevice type for Android 10+)
+        createChannel(this)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            startForeground(NOTIFICATION_ID, buildNotification("Verbinde mit $deviceName..."),
+                ServiceInfo.FOREGROUND_SERVICE_TYPE_CONNECTED_DEVICE)
+        } else {
+            startForeground(NOTIFICATION_ID, buildNotification("Verbinde mit $deviceName..."))
+        }
+
+        scope.launch {
+            val glanceId = GlanceAppWidgetManager(this@WidgetTriggerService)
+                .getGlanceIdBy(appWidgetId)
+            var bleManager: ShellyBleManager? = null
+            try {
+                withTimeout(TRIGGER_TIMEOUT_MS) {
+                    bleManager = ShellyBleManager(this@WidgetTriggerService)
+                    // Direct MAC connection, fallback to BLE scan
+                    try {
+                        bleManager!!.connect(deviceMac)
+                    } catch (e: Exception) {
+                        updateStatus(glanceId, WidgetStatus.CONNECTING, "Scan...")
+                        bleManager!!.disconnect()
+                        bleManager = ShellyBleManager(this@WidgetTriggerService)
+                        bleManager!!.connectByScan(deviceMac.replace(":", "").uppercase())
+                    }
+                    val success = bleManager!!.triggerSwitch(switchId, password?.ifEmpty { null })
+                    if (success) updateStatus(glanceId, WidgetStatus.TRIGGERED, "Ausgelöst!")
+                    else updateStatus(glanceId, WidgetStatus.ERROR, "Keine Antwort")
+                }
+            } catch (e: SecurityException) {
+                updateStatus(glanceId, WidgetStatus.ERROR, "Berechtigung fehlt")
+            } catch (e: Exception) {
+                updateStatus(glanceId, WidgetStatus.ERROR,
+                    e.message?.take(40) ?: e.javaClass.simpleName)
+            } finally {
+                try { bleManager?.disconnect() } catch (_: Exception) {}
+            }
+            delay(RESET_DELAY_MS)
+            updateStatus(glanceId, WidgetStatus.IDLE, "Tippen zum Auslösen")
+            stopSelf(startId)
+        }
+        return START_NOT_STICKY
+    }
+
+    private suspend fun updateStatus(glanceId: GlanceId, status: String, text: String) {
+        updateAppWidgetState(this, PreferencesGlanceStateDefinition, glanceId) { prefs ->
+            prefs.toMutablePreferences().apply {
+                this[WidgetKeys.STATUS] = status
+                this[WidgetKeys.STATUS_TEXT] = text
+            }
+        }
+        GarageWidget().update(this, glanceId)
+    }
+
+    override fun onBind(intent: Intent?): IBinder? = null
+    override fun onDestroy() { scope.cancel(); super.onDestroy() }
+}
+```
+
+### WidgetConfigActivity.kt
+
+```kotlin
+class WidgetConfigActivity : ComponentActivity() {
+    private val scope = MainScope()
     private var appWidgetId = AppWidgetManager.INVALID_APPWIDGET_ID
-    private lateinit var deviceAdapter: WidgetDeviceAdapter
-    private lateinit var repository: DeviceRepository
-    
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_widget_config)
-        
-        // Set result to CANCELED in case user backs out
         setResult(RESULT_CANCELED)
-        
-        // Get widget ID
         appWidgetId = intent?.extras?.getInt(
-            AppWidgetManager.EXTRA_APPWIDGET_ID,
-            AppWidgetManager.INVALID_APPWIDGET_ID
+            AppWidgetManager.EXTRA_APPWIDGET_ID, AppWidgetManager.INVALID_APPWIDGET_ID
         ) ?: AppWidgetManager.INVALID_APPWIDGET_ID
-        
-        if (appWidgetId == AppWidgetManager.INVALID_APPWIDGET_ID) {
-            finish()
-            return
+        if (appWidgetId == AppWidgetManager.INVALID_APPWIDGET_ID) { finish(); return }
+
+        val devices = DeviceRepository(this).getDevices()
+
+        // Auto-close if already configured (by provideGlance auto-config)
+        scope.launch {
+            val glanceId = GlanceAppWidgetManager(this@WidgetConfigActivity)
+                .getGlanceIdBy(appWidgetId)
+            val state = getAppWidgetState(this@WidgetConfigActivity,
+                PreferencesGlanceStateDefinition, glanceId)
+            if (state[WidgetKeys.DEVICE_NAME] != null) {
+                setResult(RESULT_OK, Intent().putExtra(
+                    AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId))
+                finish()
+            }
         }
-        
-        repository = DeviceRepository(this)
-        
-        // Setup RecyclerView
-        val recyclerView = findViewById<RecyclerView>(R.id.deviceList)
-        deviceAdapter = WidgetDeviceAdapter { device ->
-            selectDevice(device)
+
+        setContent {
+            GarageTheme {
+                ConfigScreen(devices = devices, onDeviceSelected = { onDeviceChosen(it) })
+            }
         }
-        recyclerView.adapter = deviceAdapter
-        recyclerView.layoutManager = LinearLayoutManager(this)
-        
-        // Load devices
-        deviceAdapter.submitList(repository.getDevices())
-        
-        // Empty state
-        val emptyState = findViewById<TextView>(R.id.emptyState)
-        emptyState.visibility = if (repository.getDevices().isEmpty()) View.VISIBLE else View.GONE
     }
-    
-    private fun selectDevice(device: Device) {
-        // Save widget config
-        getSharedPreferences("widget_$appWidgetId", Context.MODE_PRIVATE)
-            .edit()
-            .putString("device_mac", device.mac)
-            .putString("device_name", device.name)
-            .putString("device_password", device.password)
-            .apply()
-        
-        // Update widget
-        val appWidgetManager = AppWidgetManager.getInstance(this)
-        GarageWidgetProvider().onUpdate(this, appWidgetManager, intArrayOf(appWidgetId))
-        
-        // Return success
-        val resultValue = Intent().apply {
-            putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId)
+
+    private fun onDeviceChosen(device: Device) {
+        scope.launch {
+            val glanceId = GlanceAppWidgetManager(this@WidgetConfigActivity)
+                .getGlanceIdBy(appWidgetId)
+            updateAppWidgetState(this@WidgetConfigActivity,
+                PreferencesGlanceStateDefinition, glanceId) { prefs ->
+                prefs.toMutablePreferences().apply {
+                    this[WidgetKeys.DEVICE_ID] = device.id
+                    this[WidgetKeys.DEVICE_NAME] = device.name
+                    this[WidgetKeys.DEVICE_MAC] = device.mac
+                    this[WidgetKeys.DEVICE_PASSWORD] = device.password
+                    this[WidgetKeys.DEVICE_SWITCH_ID] = device.switchId.toString()
+                    this[WidgetKeys.APP_WIDGET_ID] = appWidgetId.toString()
+                    this[WidgetKeys.STATUS] = WidgetStatus.IDLE
+                    this[WidgetKeys.STATUS_TEXT] = "Tippen zum Auslösen"
+                }
+            }
+            GarageWidget().update(this@WidgetConfigActivity, glanceId)
+            setResult(RESULT_OK, Intent().putExtra(
+                AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId))
+            finish()
         }
-        setResult(RESULT_OK, resultValue)
-        finish()
     }
 }
 ```
 
-#### activity_widget_config.xml
+### Pin Widget aus App-Settings (MainActivity)
 
-```xml
-<?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:background="#0d0d14">
-
-    <TextView
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:padding="20dp"
-        android:text="Gerät für Widget auswählen"
-        android:textColor="#eaeaea"
-        android:textSize="18sp"
-        android:textStyle="bold" />
-
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/deviceList"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:padding="16dp"
-        android:clipToPadding="false" />
-
-    <TextView
-        android:id="@+id/emptyState"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:gravity="center"
-        android:text="Keine Geräte konfiguriert.\n\nÖffne die App um Geräte hinzuzufügen."
-        android:textColor="#6b6b7b"
-        android:textSize="16sp"
-        android:visibility="gone" />
-
-</LinearLayout>
+```kotlin
+private fun requestPinWidget(device: Device, viewModel: GarageViewModel) {
+    val appWidgetManager = AppWidgetManager.getInstance(this)
+    if (!appWidgetManager.isRequestPinAppWidgetSupported) {
+        viewModel.showToast("Launcher unterstützt keine Widgets", isError = true)
+        return
+    }
+    getSharedPreferences("garage_settings", MODE_PRIVATE)
+        .edit().putString("pending_widget_device", device.id).commit()
+    val provider = ComponentName(this, GarageWidgetReceiver::class.java)
+    appWidgetManager.requestPinAppWidget(provider, null, null)
+}
 ```
 
-### AndroidManifest.xml Widget Registrierung
+### AndroidManifest.xml
 
 ```xml
-<manifest ...>
-    <application ...>
-        
-        <!-- Single Widget Provider -->
-        <receiver
-            android:name=".widget.GarageWidgetProvider"
-            android:exported="true"
-            android:label="Garage (Klein)">
-            <intent-filter>
-                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
-                <action android:name="de.beat2er.garage.ACTION_TRIGGER" />
-                <action android:name="de.beat2er.garage.ACTION_UPDATE_STATUS" />
-            </intent-filter>
-            <meta-data
-                android:name="android.appwidget.provider"
-                android:resource="@xml/widget_single_info" />
-        </receiver>
+<!-- Permissions -->
+<uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+<uses-permission android:name="android.permission.FOREGROUND_SERVICE_CONNECTED_DEVICE" />
 
-        <!-- Large Widget Provider -->
-        <receiver
-            android:name=".widget.GarageWidgetLargeProvider"
-            android:exported="true"
-            android:label="Garage (Groß)">
-            <intent-filter>
-                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
-                <action android:name="de.beat2er.garage.ACTION_TRIGGER" />
-            </intent-filter>
-            <meta-data
-                android:name="android.appwidget.provider"
-                android:resource="@xml/widget_large_info" />
-        </receiver>
+<!-- Widget Receiver -->
+<receiver android:name=".widget.GarageWidgetReceiver" android:exported="true">
+    <intent-filter>
+        <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+    </intent-filter>
+    <meta-data android:name="android.appwidget.provider"
+               android:resource="@xml/garage_widget_info" />
+</receiver>
 
-        <!-- Multi Widget Provider -->
-        <receiver
-            android:name=".widget.GarageWidgetMultiProvider"
-            android:exported="true"
-            android:label="Garage (Multi)">
-            <intent-filter>
-                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
-                <action android:name="de.beat2er.garage.ACTION_TRIGGER" />
-            </intent-filter>
-            <meta-data
-                android:name="android.appwidget.provider"
-                android:resource="@xml/widget_multi_info" />
-        </receiver>
+<!-- Config Activity -->
+<activity android:name=".widget.WidgetConfigActivity" android:exported="true">
+    <intent-filter>
+        <action android:name="android.appwidget.action.APPWIDGET_CONFIGURE" />
+    </intent-filter>
+</activity>
 
-        <!-- Widget Configuration Activity -->
-        <activity
-            android:name=".widget.WidgetConfigActivity"
-            android:exported="true"
-            android:theme="@style/Theme.Garage.Dialog">
-            <intent-filter>
-                <action android:name="android.appwidget.action.APPWIDGET_CONFIGURE" />
-            </intent-filter>
-        </activity>
-        
-    </application>
-</manifest>
+<!-- BLE Trigger Service -->
+<service android:name=".widget.WidgetTriggerService"
+         android:foregroundServiceType="connectedDevice"
+         android:exported="false" />
 ```
 
 ### Widget User Flow
 
 ```
-1. USER LONG-PRESS HOME SCREEN
+1. HOME SCREEN → WIDGET PICKER
               ↓
-2. SELECT "Garage" WIDGET
-   ┌─────────────────────────────┐
-   │ 🚗 Garage (Klein)    1x1   │
-   │ 🚗 Garage (Groß)     2x2   │
-   │ 🚗 Garage (Multi)    4x2   │
-   └─────────────────────────────┘
+2. "Garage Widget" auswählen (1x1 Standard, resizable)
               ↓
-3. CONFIGURATION ACTIVITY OPENS
+3. WidgetConfigActivity öffnet
    ┌─────────────────────────────┐
-   │ Gerät für Widget auswählen  │
+   │ Widget einrichten           │
+   │ Wähle ein Gerät             │
    │                             │
    │ ┌─────────────────────────┐ │
-   │ │ 🏠 Hauptgarage          │ │
-   │ │    CC:DB:A7:CF:EB:00    │ │
-   │ └─────────────────────────┘ │
-   │ ┌─────────────────────────┐ │
-   │ │ 🏠 Garage Hinten        │ │
-   │ │    44:17:93:CD:2E:20    │ │
+   │ │ Hauptgarage             │ │
+   │ │ CC:DB:A7:CF:EB:00       │ │
    │ └─────────────────────────┘ │
    └─────────────────────────────┘
               ↓
-4. USER TAPS DEVICE → WIDGET PLACED
+4. Gerät tippen → Config in Glance DataStore → Widget platziert
               ↓
-5. USER TAPS WIDGET → GARAGE TRIGGERED!
-   ┌──────┐
-   │  🏠  │ → BLE Connect → Switch.Set → Done!
-   │ ━━━━ │
-   └──────┘
+5. Widget tippen → ForegroundService → BLE → Ausgelöst!
+   ┌──────────┐
+   │ Hauptgar.│    Status-Farben:
+   │Ausgelöst!│    Gelb=Verbinde, Grün=OK, Rot=Fehler
+   └──────────┘
 ```
 
 ---
@@ -1181,45 +980,19 @@ class WidgetConfigActivity : AppCompatActivity() {
 ### Ablauf bei Trigger
 
 ```
-1. User tippt Trigger-Button
+1. User tippt Trigger-Button / Widget
         ↓
-2. Check: Gerät bereits verbunden?
-   ├── JA → Direkt zu Schritt 5
-   └── NEIN → Weiter
-        ↓
-3. Versuche Direktverbindung via MAC
+2. Versuche Direktverbindung via MAC
    bluetoothAdapter.getRemoteDevice(mac).connectGatt(...)
         ↓
-4. Falls fehlgeschlagen: Scan nach Gerätenamen
+3. Falls fehlgeschlagen: Scan nach Gerätenamen
    Suche "Shelly*{MAC_SUFFIX}" in BLE Advertisements
         ↓
-5. Sende "Switch.Set" RPC
+4. Sende "Switch.Set" RPC
         ↓
-6. Bei 401: Auth hinzufügen und wiederholen
+5. Bei 401: Auth hinzufügen und wiederholen
         ↓
-7. UI Update: "Ausgelöst!" / Fehler anzeigen
-```
-
-### Verbindung halten
-
-```kotlin
-// Optional: Verbindung im Hintergrund halten
-class GarageForegroundService : Service() {
-    private val bleManager = ShellyBleManager(this)
-    private val connectedDevices = mutableMapOf<String, BluetoothGatt>()
-    
-    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        // Foreground Notification
-        startForeground(1, createNotification())
-        
-        // Alle Geräte verbinden
-        devices.forEach { device ->
-            bleManager.connect(device.mac, ...)
-        }
-        
-        return START_STICKY
-    }
-}
+6. UI Update: "Ausgelöst!" / Fehler anzeigen
 ```
 
 ---
