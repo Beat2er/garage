@@ -29,6 +29,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.glance.appwidget.GlanceAppWidgetManager
+import androidx.glance.appwidget.state.getAppWidgetState
 import androidx.glance.appwidget.state.updateAppWidgetState
 import androidx.glance.state.PreferencesGlanceStateDefinition
 import de.beat2er.garage.data.Device
@@ -65,27 +66,32 @@ class WidgetConfigActivity : ComponentActivity() {
 
         val devices = DeviceRepository(this).getDevices()
 
-        // Check for pre-selected device (from "pin widget" in app settings)
-        val settingsPrefs = getSharedPreferences("garage_settings", MODE_PRIVATE)
-        val pendingDeviceId = settingsPrefs.getString("pending_widget_device", null)
-        val preselectedDevice = if (pendingDeviceId != null) {
-            settingsPrefs.edit().remove("pending_widget_device").commit()
-            devices.find { it.id == pendingDeviceId }
-        } else null
-
-        if (preselectedDevice != null) {
-            Log.d("WidgetConfig", "Auto-config: ${preselectedDevice.name} (widget=$appWidgetId)")
+        // Check if widget was already auto-configured (by provideGlance)
+        scope.launch {
+            try {
+                val glanceId = GlanceAppWidgetManager(this@WidgetConfigActivity)
+                    .getGlanceIdBy(appWidgetId)
+                val state = getAppWidgetState(
+                    this@WidgetConfigActivity,
+                    PreferencesGlanceStateDefinition,
+                    glanceId
+                )
+                if (state[WidgetKeys.DEVICE_NAME] != null) {
+                    Log.d("WidgetConfig", "Widget bereits konfiguriert, schliesse (widget=$appWidgetId)")
+                    val resultValue = Intent().putExtra(
+                        AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId
+                    )
+                    setResult(RESULT_OK, resultValue)
+                    finish()
+                    return@launch
+                }
+            } catch (e: Exception) {
+                Log.e("WidgetConfig", "Auto-check fehlgeschlagen: ${e.message}")
+            }
         }
 
         setContent {
             GarageTheme {
-                // Auto-select if pre-selected device exists
-                if (preselectedDevice != null) {
-                    androidx.compose.runtime.LaunchedEffect(Unit) {
-                        onDeviceChosen(preselectedDevice)
-                    }
-                }
-
                 ConfigScreen(
                     devices = devices,
                     onDeviceSelected = { device -> onDeviceChosen(device) }
@@ -96,11 +102,9 @@ class WidgetConfigActivity : ComponentActivity() {
 
     private fun onDeviceChosen(device: Device) {
         scope.launch {
-            // Get the GlanceId for this widget
             val glanceId = GlanceAppWidgetManager(this@WidgetConfigActivity)
                 .getGlanceIdBy(appWidgetId)
 
-            // Save device config to Glance DataStore
             updateAppWidgetState(this@WidgetConfigActivity, PreferencesGlanceStateDefinition, glanceId) { prefs ->
                 prefs.toMutablePreferences().apply {
                     this[WidgetKeys.DEVICE_ID] = device.id
@@ -108,15 +112,14 @@ class WidgetConfigActivity : ComponentActivity() {
                     this[WidgetKeys.DEVICE_MAC] = device.mac
                     this[WidgetKeys.DEVICE_PASSWORD] = device.password
                     this[WidgetKeys.DEVICE_SWITCH_ID] = device.switchId.toString()
+                    this[WidgetKeys.APP_WIDGET_ID] = appWidgetId.toString()
                     this[WidgetKeys.STATUS] = WidgetStatus.IDLE
                     this[WidgetKeys.STATUS_TEXT] = "Tippen zum Auslösen"
                 }
             }
 
-            // Update the widget
             GarageWidget().update(this@WidgetConfigActivity, glanceId)
 
-            // Return success
             val resultValue = Intent().putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId)
             setResult(RESULT_OK, resultValue)
             finish()

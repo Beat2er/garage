@@ -8,6 +8,7 @@ object WidgetKeys {
     val DEVICE_MAC = stringPreferencesKey("device_mac")
     val DEVICE_PASSWORD = stringPreferencesKey("device_password")
     val DEVICE_SWITCH_ID = stringPreferencesKey("device_switch_id")
+    val APP_WIDGET_ID = stringPreferencesKey("app_widget_id")
     val STATUS = stringPreferencesKey("status")
     val STATUS_TEXT = stringPreferencesKey("status_text")
 }
