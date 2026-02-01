@@ -32,6 +32,26 @@
             </intent-filter>
         </activity>
 
+        <receiver
+            android:name=".widget.GarageWidgetReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/garage_widget_info" />
+        </receiver>
+
+        <activity
+            android:name=".widget.WidgetConfigActivity"
+            android:exported="true"
+            android:theme="@style/Theme.Garage">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_CONFIGURE" />
+            </intent-filter>
+        </activity>
+
     </application>
 
 </manifest>

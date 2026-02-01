@@ -72,5 +72,8 @@ dependencies {
     implementation(libs.mlkit.barcode)
     implementation(libs.zxing)
 
+    implementation(libs.androidx.glance)
+    implementation(libs.androidx.glance.appwidget)
+
     debugImplementation(libs.androidx.compose.ui.tooling)
 }

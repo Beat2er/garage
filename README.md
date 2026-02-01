@@ -53,7 +53,7 @@ PWA und Android-App werden feature-gleich gehalten:
 | Debug-Modus | Ja | Ja |
 | Offline-fähig | Ja | Ja |
 | Passwort-Authentifizierung | Ja | Ja |
-| Home Screen Widget | - | Geplant |
+| Home Screen Widget | - | Ja |
 | BLE-Berechtigungen dauerhaft | - | Ja |
 
 ## Quick Start
