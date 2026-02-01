@@ -12,8 +12,8 @@ android {
         applicationId = "de.beat2er.garage"
         minSdk = 26
         targetSdk = 35
-        versionCode = 5
-        versionName = "1.3.0"
+        versionCode = 6
+        versionName = "1.4.0"
 
         buildConfigField("String", "UPDATE_URL", "\"https://beat2er.github.io/garage/app/version.json\"")
     }

@@ -34,6 +34,8 @@ class WidgetTriggerService : Service() {
         const val EXTRA_DEVICE_MAC = "device_mac"
         const val EXTRA_DEVICE_PASSWORD = "device_password"
         const val EXTRA_DEVICE_SWITCH_ID = "device_switch_id"
+        const val EXTRA_WIDGET_TYPE = "widget_type"
+        const val EXTRA_DEVICE_ID = "device_id"
 
         fun createChannel(context: Context) {
             val channel = NotificationChannel(
@@ -54,14 +56,21 @@ class WidgetTriggerService : Service() {
     override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        val widgetType = intent?.getStringExtra(EXTRA_WIDGET_TYPE) ?: "single"
         val appWidgetId = intent?.getIntExtra(EXTRA_APP_WIDGET_ID, -1) ?: -1
+        val deviceId = intent?.getStringExtra(EXTRA_DEVICE_ID)
         val deviceName = intent?.getStringExtra(EXTRA_DEVICE_NAME) ?: "?"
         val deviceMac = intent?.getStringExtra(EXTRA_DEVICE_MAC)
         val password = intent?.getStringExtra(EXTRA_DEVICE_PASSWORD)
         val switchId = intent?.getIntExtra(EXTRA_DEVICE_SWITCH_ID, 0) ?: 0
 
-        if (appWidgetId == -1 || deviceMac.isNullOrEmpty()) {
-            Log.e(TAG, "Ungültige Parameter: widgetId=$appWidgetId mac=$deviceMac")
+        if (widgetType == "single" && (appWidgetId == -1 || deviceMac.isNullOrEmpty())) {
+            Log.e(TAG, "Ungültige Parameter (single): widgetId=$appWidgetId mac=$deviceMac")
+            stopSelf(startId)
+            return START_NOT_STICKY
+        }
+        if (widgetType == "multi" && (deviceId.isNullOrEmpty() || deviceMac.isNullOrEmpty())) {
+            Log.e(TAG, "Ungültige Parameter (multi): deviceId=$deviceId mac=$deviceMac")
             stopSelf(startId)
             return START_NOT_STICKY
         }
@@ -78,36 +87,46 @@ class WidgetTriggerService : Service() {
             startForeground(NOTIFICATION_ID, notification)
         }
 
-        Log.d(TAG, "Service gestartet: $deviceName MAC=$deviceMac switchId=$switchId widgetId=$appWidgetId")
+        Log.d(TAG, "Service gestartet ($widgetType): $deviceName MAC=$deviceMac switchId=$switchId")
 
         scope.launch {
-            val glanceId = try {
-                GlanceAppWidgetManager(this@WidgetTriggerService)
-                    .getGlanceIdBy(appWidgetId)
-            } catch (e: Exception) {
-                Log.e(TAG, "GlanceId nicht gefunden: ${e.message}")
-                stopSelf(startId)
-                return@launch
+            // For single widget: resolve glanceId from appWidgetId
+            // For multi widget: we update all instances
+            val singleGlanceId = if (widgetType == "single") {
+                try {
+                    GlanceAppWidgetManager(this@WidgetTriggerService)
+                        .getGlanceIdBy(appWidgetId)
+                } catch (e: Exception) {
+                    Log.e(TAG, "GlanceId nicht gefunden: ${e.message}")
+                    stopSelf(startId)
+                    return@launch
+                }
+            } else null
+
+            val statusUpdater: suspend (String, String) -> Unit = if (widgetType == "multi") {
+                { status, text -> updateMultiStatus(deviceId!!, status, text) }
+            } else {
+                { status, text -> updateStatus(singleGlanceId!!, status, text) }
             }
 
             var bleManager: ShellyBleManager? = null
             try {
                 withTimeout(TRIGGER_TIMEOUT_MS) {
-                    updateStatus(glanceId, WidgetStatus.CONNECTING, "Verbinde...")
+                    statusUpdater(WidgetStatus.CONNECTING, "Verbinde...")
 
                     bleManager = ShellyBleManager(this@WidgetTriggerService)
 
                     // Try direct MAC connection
                     Log.d(TAG, "Direktverbindung: $deviceMac")
-                    updateStatus(glanceId, WidgetStatus.CONNECTING, "MAC $deviceMac")
+                    statusUpdater(WidgetStatus.CONNECTING, "MAC $deviceMac")
                     try {
-                        bleManager!!.connect(deviceMac)
+                        bleManager!!.connect(deviceMac!!)
                         Log.d(TAG, "Direktverbindung OK")
                     } catch (e: Exception) {
                         Log.d(TAG, "Direktverbindung fehlgeschlagen: ${e.message}")
-                        updateStatus(glanceId, WidgetStatus.CONNECTING, "Scan...")
+                        statusUpdater(WidgetStatus.CONNECTING, "Scan...")
 
-                        val macSuffix = deviceMac.replace(":", "").uppercase()
+                        val macSuffix = deviceMac!!.replace(":", "").uppercase()
                         Log.d(TAG, "Scan: suffix=$macSuffix")
                         bleManager!!.disconnect()
                         bleManager = ShellyBleManager(this@WidgetTriggerService)
@@ -116,7 +135,7 @@ class WidgetTriggerService : Service() {
                     }
 
                     // Trigger the switch
-                    updateStatus(glanceId, WidgetStatus.CONNECTING, "Sende...")
+                    statusUpdater(WidgetStatus.CONNECTING, "Sende...")
                     Log.d(TAG, "Switch.Set switchId=$switchId")
                     val success = bleManager!!.triggerSwitch(
                         switchId = switchId,
@@ -125,26 +144,30 @@ class WidgetTriggerService : Service() {
 
                     if (success) {
                         Log.d(TAG, "Erfolgreich ausgelöst")
-                        updateStatus(glanceId, WidgetStatus.TRIGGERED, "Ausgelöst!")
+                        statusUpdater(WidgetStatus.TRIGGERED, "Ausgelöst!")
                     } else {
                         Log.d(TAG, "triggerSwitch returned false")
-                        updateStatus(glanceId, WidgetStatus.ERROR, "Keine Antwort")
+                        statusUpdater(WidgetStatus.ERROR, "Keine Antwort")
                     }
                 }
             } catch (e: SecurityException) {
                 Log.e(TAG, "Bluetooth-Berechtigung fehlt", e)
-                updateStatus(glanceId, WidgetStatus.ERROR, "Berechtigung fehlt")
+                statusUpdater(WidgetStatus.ERROR, "Berechtigung fehlt")
             } catch (e: Exception) {
                 Log.e(TAG, "Fehlgeschlagen: ${e.javaClass.simpleName}: ${e.message}", e)
                 val msg = e.message?.take(40) ?: e.javaClass.simpleName
-                updateStatus(glanceId, WidgetStatus.ERROR, msg)
+                statusUpdater(WidgetStatus.ERROR, msg)
             } finally {
                 try { bleManager?.disconnect() } catch (_: Exception) {}
             }
 
             // Reset to idle after delay
             delay(RESET_DELAY_MS)
-            updateStatus(glanceId, WidgetStatus.IDLE, "Tippen zum Auslösen")
+            if (widgetType == "multi") {
+                statusUpdater(WidgetStatus.IDLE, "Bereit")
+            } else {
+                statusUpdater(WidgetStatus.IDLE, "Tippen zum Auslösen")
+            }
 
             stopSelf(startId)
         }
@@ -181,5 +204,25 @@ class WidgetTriggerService : Service() {
             }
         }
         GarageWidget().update(this, glanceId)
+    }
+
+    private suspend fun updateMultiStatus(
+        deviceId: String,
+        status: String,
+        text: String
+    ) {
+        val manager = GlanceAppWidgetManager(this)
+        val multiIds = manager.getGlanceIds(MultiGarageWidget::class.java)
+        for (id in multiIds) {
+            updateAppWidgetState(
+                this, PreferencesGlanceStateDefinition, id
+            ) { prefs ->
+                prefs.toMutablePreferences().apply {
+                    this[MultiWidgetKeys.statusKey(deviceId)] = status
+                    this[MultiWidgetKeys.statusTextKey(deviceId)] = text
+                }
+            }
+            MultiGarageWidget().update(this, id)
+        }
     }
 }

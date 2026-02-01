@@ -15,6 +15,7 @@ import de.beat2er.garage.data.Device
 import de.beat2er.garage.data.DeviceRepository
 import de.beat2er.garage.update.UpdateChecker
 import de.beat2er.garage.update.UpdateInfo
+import de.beat2er.garage.widget.MultiGarageWidget
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -81,6 +82,14 @@ class GarageViewModel(application: Application) : AndroidViewModel(application) 
         _uiState.update { it.copy(devices = devices) }
     }
 
+    private fun refreshMultiWidget() {
+        viewModelScope.launch {
+            try {
+                MultiGarageWidget().updateAll(getApplication())
+            } catch (_: Exception) {}
+        }
+    }
+
     // ========== Update ==========
 
     private fun checkForUpdate() {
@@ -145,6 +154,7 @@ class GarageViewModel(application: Application) : AndroidViewModel(application) 
         val device = Device(name = name, mac = normalizedMac, password = password)
         repository.addDevice(device)
         loadDevices()
+        refreshMultiWidget()
         showToast("$name hinzugefügt")
         addDebugLog("Gerät hinzugefügt: $name ($normalizedMac)")
     }
@@ -152,6 +162,7 @@ class GarageViewModel(application: Application) : AndroidViewModel(application) 
     fun updateDevice(device: Device) {
         repository.updateDevice(device)
         loadDevices()
+        refreshMultiWidget()
         showToast("Gespeichert")
     }
 
@@ -163,6 +174,7 @@ class GarageViewModel(application: Application) : AndroidViewModel(application) 
             state.copy(deviceStates = state.deviceStates - device.mac)
         }
         loadDevices()
+        refreshMultiWidget()
         showToast("Gelöscht")
         addDebugLog("Gerät gelöscht: ${device.name}")
     }
@@ -359,6 +371,7 @@ class GarageViewModel(application: Application) : AndroidViewModel(application) 
 
             if (added > 0) {
                 loadDevices()
+                refreshMultiWidget()
                 showToast("$added Gerät(e) importiert")
                 addDebugLog("$added Gerät(e) importiert")
             } else {

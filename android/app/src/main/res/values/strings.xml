@@ -5,4 +5,8 @@
     <string name="widget_description">Garagentor per Tap auslösen</string>
     <string name="widget_tap_to_trigger">Tippen zum Auslösen</string>
     <string name="widget_preview_name">Hauptgarage</string>
+    <string name="multi_widget_name">Alle Garagen</string>
+    <string name="multi_widget_description">Alle Geräte mit Status und Trigger-Button</string>
+    <string name="multi_widget_preview_title">Alle Garagen</string>
+    <string name="multi_widget_preview_subtitle">3 Geräte konfiguriert</string>
 </resources>

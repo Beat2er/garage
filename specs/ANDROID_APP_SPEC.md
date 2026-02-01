@@ -901,6 +901,69 @@ class WidgetConfigActivity : ComponentActivity() {
 }
 ```
 
+### Multi-Device Widget (Alle Garagen)
+
+Zweiter Widget-Typ der ALLE konfigurierten Geräte zeigt (4x2 Standard, resizable).
+Keine Konfiguration nötig — zeigt automatisch alle Geräte aus DeviceRepository.
+
+| Widget | Größe | Funktion |
+|--------|-------|----------|
+| **Alle Garagen** | 4x2 (resizable ab 180x57dp) | Alle Geräte mit Status + Trigger-Button |
+
+#### Architektur
+
+```
+widget/
+├── MultiWidgetKeys.kt              # Per-device DataStore Keys (status_$id, status_text_$id)
+├── MultiGarageWidget.kt            # GlanceAppWidget: LazyColumn mit allen Geräten
+├── MultiGarageWidgetReceiver.kt    # GlanceAppWidgetReceiver Bridge
+└── MultiTriggerAction.kt           # ActionCallback mit per-device ActionParameters
+```
+
+#### Per-Device ActionParameters
+
+Jeder Trigger-Button bekommt eigene ActionParameters mit allen Gerätedaten:
+- `device_mac`, `device_name`, `device_password`, `device_switch_id`, `device_id`
+
+MultiTriggerAction liest diese direkt aus den ActionParameters (kein DataStore-Lookup).
+
+#### Status-Feedback
+
+Per-device Status in multi-widget DataStore:
+- `stringPreferencesKey("status_${device.id}")` → idle/connecting/triggered/error
+- `stringPreferencesKey("status_text_${device.id}")` → "Bereit"/"Verbinde..."/"Ausgelöst!"/Fehler
+
+Service aktualisiert ALLE MultiGarageWidget-Instanzen via `GlanceAppWidgetManager.getGlanceIds()`.
+
+#### Widget-Info (res/xml/multi_garage_widget_info.xml)
+
+```xml
+<appwidget-provider
+    android:minWidth="250dp"
+    android:minHeight="110dp"
+    android:minResizeWidth="180dp"
+    android:minResizeHeight="57dp"
+    android:targetCellWidth="4"
+    android:targetCellHeight="2"
+    android:resizeMode="horizontal|vertical"
+    android:updatePeriodMillis="0"
+    android:previewLayout="@layout/multi_garage_widget_preview"
+    android:widgetCategory="home_screen"
+    android:description="@string/multi_widget_description" />
+```
+
+#### WidgetTriggerService Erweiterung
+
+- Neue Extras: `EXTRA_WIDGET_TYPE` ("single"/"multi"), `EXTRA_DEVICE_ID`
+- `onStartCommand()`: Wenn `widgetType == "multi"`, kein appWidgetId nötig
+- `updateMultiStatus()`: ALLE MultiGarageWidget-Instanzen via GlanceAppWidgetManager
+  aktualisieren mit per-device Status-Keys
+
+#### Auto-Refresh
+
+GarageViewModel ruft nach `addDevice()`, `updateDevice()`, `deleteDevice()`, `importDevices()`
+automatisch `MultiGarageWidget().updateAll(context)` auf.
+
 ### Pin Widget aus App-Settings (MainActivity)
 
 ```kotlin
