@@ -1,0 +1,1751 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#1a1a2e">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>Garage</title>
+    <link rel="icon" type="image/png" sizes="32x32" href="icon-192.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="icon-192.png">
+    <link rel="shortcut icon" href="icon-192.png">
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="icon-192.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Outfit:wght@300;500;600&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        :root {
+            --bg-dark: #0d0d14;
+            --bg-card: #1a1a2e;
+            --bg-card-hover: #252542;
+            --accent: #e94560;
+            --accent-glow: rgba(233, 69, 96, 0.4);
+            --text: #eaeaea;
+            --text-dim: #6b6b7b;
+            --success: #4ade80;
+            --warning: #fbbf24;
+            --border: rgba(255,255,255,0.08);
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background: var(--bg-dark);
+            color: var(--text);
+            min-height: 100vh;
+            min-height: 100dvh;
+            padding: 20px;
+            padding-bottom: 100px;
+            background-image: 
+                radial-gradient(ellipse at 50% 0%, rgba(233, 69, 96, 0.08) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(74, 222, 128, 0.05) 0%, transparent 40%);
+        }
+
+        .container {
+            width: 100%;
+            max-width: 480px;
+            margin: 0 auto;
+        }
+
+        /* Header */
+        .header {
+            text-align: center;
+            padding: 20px 0 30px;
+        }
+
+        .header h1 {
+            font-family: 'Space Mono', monospace;
+            font-size: 1.4rem;
+            font-weight: 700;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+        }
+
+        .header p {
+            font-size: 0.85rem;
+            color: var(--text-dim);
+            margin-top: 6px;
+        }
+
+        /* Device List */
+        .device-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .device-card {
+            background: var(--bg-card);
+            border-radius: 16px;
+            padding: 16px;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: 2px solid transparent;
+        }
+
+        .device-card:hover {
+            background: var(--bg-card-hover);
+        }
+
+        .device-card:active {
+            transform: scale(0.98);
+        }
+
+        .device-card.connecting {
+            border-color: var(--warning);
+        }
+
+        .device-card.connected {
+            border-color: var(--success);
+        }
+
+        .device-icon {
+            width: 56px;
+            height: 56px;
+            background: var(--bg-dark);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .device-icon svg {
+            width: 28px;
+            height: 28px;
+            stroke: var(--text-dim);
+            stroke-width: 1.5;
+            fill: none;
+            transition: all 0.2s ease;
+        }
+
+        .device-card.connected .device-icon svg {
+            stroke: var(--success);
+        }
+
+        .device-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .device-name {
+            font-weight: 600;
+            font-size: 1rem;
+            margin-bottom: 4px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .device-mac {
+            font-family: 'Space Mono', monospace;
+            font-size: 0.75rem;
+            color: var(--text-dim);
+        }
+
+        .device-status {
+            font-size: 0.7rem;
+            margin-top: 4px;
+            color: var(--text-dim);
+        }
+
+        .device-status.connected {
+            color: var(--success);
+        }
+
+        .device-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .btn-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            border: none;
+            background: var(--bg-dark);
+            color: var(--text-dim);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+        }
+
+        .btn-icon:hover {
+            background: var(--accent);
+            color: white;
+        }
+
+        .btn-icon svg {
+            width: 18px;
+            height: 18px;
+            stroke: currentColor;
+            stroke-width: 2;
+            fill: none;
+        }
+
+        .btn-trigger {
+            width: 56px;
+            height: 56px;
+            border-radius: 12px;
+            border: none;
+            background: var(--accent);
+            color: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.15s ease;
+            flex-shrink: 0;
+        }
+
+        .btn-trigger:hover {
+            filter: brightness(1.1);
+        }
+
+        .btn-trigger:active {
+            transform: scale(0.95);
+        }
+
+        .btn-trigger:disabled {
+            background: var(--bg-dark);
+            color: var(--text-dim);
+            cursor: not-allowed;
+        }
+
+        .btn-trigger svg {
+            width: 24px;
+            height: 24px;
+            stroke: currentColor;
+            stroke-width: 2;
+            fill: none;
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-dim);
+        }
+
+        .empty-state svg {
+            width: 64px;
+            height: 64px;
+            stroke: var(--text-dim);
+            stroke-width: 1;
+            fill: none;
+            margin-bottom: 20px;
+            opacity: 0.5;
+        }
+
+        .empty-state p {
+            font-size: 0.9rem;
+            margin-bottom: 8px;
+        }
+
+        /* Bottom Actions */
+        .bottom-actions {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            padding: 16px 20px;
+            background: linear-gradient(to top, var(--bg-dark) 80%, transparent);
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        .btn-action {
+            flex: 1;
+            max-width: 200px;
+            padding: 14px 20px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            background: var(--bg-card);
+            color: var(--text);
+            font-family: 'Outfit', sans-serif;
+            font-size: 0.85rem;
+            font-weight: 500;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: all 0.2s ease;
+        }
+
+        .btn-action:hover {
+            background: var(--bg-card-hover);
+            border-color: var(--accent);
+        }
+
+        .btn-action svg {
+            width: 18px;
+            height: 18px;
+            stroke: currentColor;
+            stroke-width: 2;
+            fill: none;
+        }
+
+        /* Modal */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.8);
+            backdrop-filter: blur(4px);
+            z-index: 100;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .modal-overlay.show {
+            display: flex;
+        }
+
+        .modal {
+            background: var(--bg-card);
+            border-radius: 20px;
+            width: 100%;
+            max-width: 400px;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            padding: 20px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .modal-header h2 {
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+
+        .modal-close {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            border: none;
+            background: var(--bg-dark);
+            color: var(--text-dim);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-close:hover {
+            color: var(--accent);
+        }
+
+        .modal-body {
+            padding: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 0.75rem;
+            font-family: 'Space Mono', monospace;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            margin-bottom: 8px;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 14px 16px;
+            background: var(--bg-dark);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            color: var(--text);
+            font-family: 'Space Mono', monospace;
+            font-size: 0.9rem;
+            outline: none;
+            transition: border-color 0.2s ease;
+        }
+
+        .form-group input:focus {
+            border-color: var(--accent);
+        }
+
+        .form-group input::placeholder {
+            color: var(--text-dim);
+        }
+
+        .form-hint {
+            font-size: 0.75rem;
+            color: var(--text-dim);
+            margin-top: 6px;
+        }
+
+        .btn-primary {
+            width: 100%;
+            padding: 14px 20px;
+            border-radius: 10px;
+            border: none;
+            background: var(--accent);
+            color: white;
+            font-family: 'Outfit', sans-serif;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .btn-primary:hover {
+            filter: brightness(1.1);
+        }
+
+        .btn-secondary {
+            width: 100%;
+            padding: 14px 20px;
+            border-radius: 10px;
+            border: 1px solid var(--border);
+            background: transparent;
+            color: var(--text);
+            font-family: 'Outfit', sans-serif;
+            font-size: 0.9rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            margin-top: 10px;
+        }
+
+        .btn-secondary:hover {
+            border-color: var(--accent);
+        }
+
+        .btn-danger {
+            background: transparent;
+            border: 1px solid var(--accent);
+            color: var(--accent);
+        }
+
+        /* QR Code */
+        .qr-container {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 16px;
+        }
+
+        .qr-container canvas {
+            max-width: 100%;
+            height: auto;
+        }
+
+        /* Scanner */
+        .scanner-container {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 1;
+            background: var(--bg-dark);
+            border-radius: 12px;
+            overflow: hidden;
+            margin-bottom: 16px;
+        }
+
+        .scanner-container video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .scanner-overlay {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .scanner-frame {
+            width: 200px;
+            height: 200px;
+            border: 2px solid var(--accent);
+            border-radius: 16px;
+            box-shadow: 0 0 0 9999px rgba(0,0,0,0.5);
+        }
+
+        /* Toast */
+        .toast {
+            position: fixed;
+            bottom: 100px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            padding: 12px 24px;
+            border-radius: 12px;
+            font-size: 0.85rem;
+            opacity: 0;
+            transition: all 0.3s ease;
+            z-index: 200;
+        }
+
+        .toast.show {
+            transform: translateX(-50%) translateY(0);
+            opacity: 1;
+        }
+
+        .toast.success {
+            border-color: var(--success);
+            color: var(--success);
+        }
+
+        .toast.error {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        /* Tabs */
+        .tabs {
+            display: flex;
+            gap: 4px;
+            background: var(--bg-dark);
+            padding: 4px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+
+        .tab {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            background: transparent;
+            color: var(--text-dim);
+            font-family: 'Outfit', sans-serif;
+            font-size: 0.85rem;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: all 0.2s ease;
+        }
+
+        .tab.active {
+            background: var(--bg-card);
+            color: var(--text);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* iOS PWA Fix */
+        @supports (-webkit-touch-callout: none) {
+            body {
+                min-height: -webkit-fill-available;
+            }
+        }
+
+        /* Toggle Switch */
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 28px;
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: var(--bg-dark);
+            transition: 0.3s;
+            border-radius: 28px;
+            border: 1px solid var(--border);
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 20px;
+            width: 20px;
+            left: 3px;
+            bottom: 3px;
+            background-color: var(--text-dim);
+            transition: 0.3s;
+            border-radius: 50%;
+        }
+
+        input:checked + .slider {
+            background-color: var(--accent);
+            border-color: var(--accent);
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(22px);
+            background-color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚗 Garage</h1>
+            <p>Bluetooth Garagentor-Steuerung</p>
+        </div>
+
+        <div class="device-list" id="deviceList"></div>
+
+        <div class="empty-state" id="emptyState">
+            <svg viewBox="0 0 24 24">
+                <path d="M3 21h18M3 7v14M21 7v14M5 7l7-4 7 4M9 21v-6h6v6" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <p>Noch keine Geräte konfiguriert</p>
+            <p style="font-size: 0.8rem;">Füge dein erstes Garagentor hinzu</p>
+        </div>
+    </div>
+
+    <div class="bottom-actions">
+        <button class="btn-action" onclick="showAddModal()">
+            <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+            Hinzufügen
+        </button>
+        <button class="btn-action" onclick="showShareModal()">
+            <svg viewBox="0 0 24 24"><path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8M16 6l-4-4-4 4M12 2v13"/></svg>
+            Teilen
+        </button>
+        <button class="btn-action" onclick="showSettingsModal()" style="flex: 0; padding: 14px;">
+            <svg viewBox="0 0 24 24"><path d="M12.22 2h-.44a2 2 0 00-2 2v.18a2 2 0 01-1 1.73l-.43.25a2 2 0 01-2 0l-.15-.08a2 2 0 00-2.73.73l-.22.38a2 2 0 00.73 2.73l.15.1a2 2 0 011 1.72v.51a2 2 0 01-1 1.74l-.15.09a2 2 0 00-.73 2.73l.22.38a2 2 0 002.73.73l.15-.08a2 2 0 012 0l.43.25a2 2 0 011 1.73V20a2 2 0 002 2h.44a2 2 0 002-2v-.18a2 2 0 011-1.73l.43-.25a2 2 0 012 0l.15.08a2 2 0 002.73-.73l.22-.39a2 2 0 00-.73-2.73l-.15-.08a2 2 0 01-1-1.74v-.5a2 2 0 011-1.74l.15-.09a2 2 0 00.73-2.73l-.22-.38a2 2 0 00-2.73-.73l-.15.08a2 2 0 01-2 0l-.43-.25a2 2 0 01-1-1.73V4a2 2 0 00-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+        </button>
+    </div>
+
+    <!-- Add Device Modal -->
+    <div class="modal-overlay" id="addModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h2>Gerät hinzufügen</h2>
+                <button class="modal-close" onclick="closeModal('addModal')">✕</button>
+            </div>
+            <div class="modal-body">
+                <div class="tabs">
+                    <button class="tab active" onclick="switchTab('manual')">Manuell</button>
+                    <button class="tab" onclick="switchTab('scan')">Scannen</button>
+                </div>
+
+                <div class="tab-content active" id="tab-manual">
+                    <div class="form-group">
+                        <label>Name</label>
+                        <input type="text" id="addName" placeholder="z.B. Hauptgarage">
+                    </div>
+                    <div class="form-group">
+                        <label>MAC-Adresse</label>
+                        <input type="text" id="addMac" placeholder="CC:DB:A7:CF:EB:02">
+                        <p class="form-hint">WiFi-MAC aus Shelly Webinterface (nicht Bluetooth-MAC!) - steht auch im Gerätenamen</p>
+                    </div>
+                    <div class="form-group">
+                        <label>Passwort (optional)</label>
+                        <input type="password" id="addPassword" placeholder="Shelly Auth Passwort">
+                    </div>
+                    <button class="btn-primary" onclick="addDeviceManual()">Hinzufügen</button>
+                </div>
+
+                <div class="tab-content" id="tab-scan">
+                    <p style="color: var(--text-dim); font-size: 0.85rem; margin-bottom: 16px; text-align: center;">
+                        Suche nach Shelly-Geräten in der Nähe
+                    </p>
+                    <button class="btn-primary" onclick="scanForDevices()">
+                        🔍 Bluetooth-Scan starten
+                    </button>
+                    <div id="scanResults" style="margin-top: 16px;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Device Modal -->
+    <div class="modal-overlay" id="editModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h2>Gerät bearbeiten</h2>
+                <button class="modal-close" onclick="closeModal('editModal')">✕</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Name</label>
+                    <input type="text" id="editName" placeholder="z.B. Hauptgarage">
+                </div>
+                <div class="form-group">
+                    <label>MAC-Adresse</label>
+                    <input type="text" id="editMac" readonly style="opacity: 0.6;">
+                </div>
+                <div class="form-group">
+                    <label>Passwort</label>
+                    <input type="password" id="editPassword" placeholder="Shelly Auth Passwort">
+                </div>
+                <button class="btn-primary" onclick="saveDevice()">Speichern</button>
+                <button class="btn-secondary btn-danger" onclick="deleteDevice()">Gerät löschen</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Settings Modal -->
+    <div class="modal-overlay" id="settingsModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h2>Einstellungen</h2>
+                <button class="modal-close" onclick="closeModal('settingsModal')">✕</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group" style="display: flex; align-items: center; justify-content: space-between;">
+                    <label style="margin: 0;">Debug-Logging</label>
+                    <label class="switch">
+                        <input type="checkbox" id="debugToggle" onchange="toggleDebug()">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                <p class="form-hint">Zeigt detaillierte Logs in der Browser-Konsole (F12)</p>
+                
+                <hr style="border: none; border-top: 1px solid var(--border); margin: 20px 0;">
+                
+                <div class="form-group">
+                    <label>Version</label>
+                    <p style="font-family: 'Space Mono', monospace; color: var(--text);" id="currentVersionDisplay">v2.6.0</p>
+                </div>
+                
+                <button class="btn-secondary" onclick="checkForUpdates(true)" style="margin-top: 8px;">
+                    🔄 Nach Updates suchen
+                </button>
+                
+                <div id="debugLog" style="display: none; margin-top: 20px;">
+                    <label style="font-size: 0.75rem; font-family: 'Space Mono', monospace; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.1em;">Debug Log</label>
+                    <div id="logOutput" style="margin-top: 8px; padding: 12px; background: var(--bg-dark); border-radius: 8px; font-family: 'Space Mono', monospace; font-size: 0.7rem; color: var(--text-dim); max-height: 200px; overflow-y: auto;"></div>
+                    <button class="btn-secondary" style="margin-top: 10px;" onclick="document.getElementById('logOutput').innerHTML = ''">Log leeren</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Share Modal -->
+    <div class="modal-overlay" id="shareModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h2>Konfiguration teilen</h2>
+                <button class="modal-close" onclick="closeModal('shareModal')">✕</button>
+            </div>
+            <div class="modal-body">
+                <div class="tabs">
+                    <button class="tab active" onclick="switchShareTab('export')">QR erstellen</button>
+                    <button class="tab" onclick="switchShareTab('import')">QR scannen</button>
+                </div>
+
+                <div class="tab-content active" id="tab-export">
+                    <p style="color: var(--text-dim); font-size: 0.85rem; margin-bottom: 16px; text-align: center;">
+                        Andere können diesen QR-Code scannen um die Geräte zu importieren
+                    </p>
+                    <div class="qr-container" id="qrContainer">
+                        <div id="qrCodeDiv"></div>
+                    </div>
+                    <button class="btn-secondary" onclick="copyConfigToClipboard()">
+                        📋 Link kopieren
+                    </button>
+                </div>
+
+                <div class="tab-content" id="tab-import">
+                    <p style="color: var(--text-dim); font-size: 0.85rem; margin-bottom: 16px; text-align: center;">
+                        Scanne einen QR-Code um Geräte zu importieren
+                    </p>
+                    <div class="scanner-container" id="scannerContainer" style="display: none;">
+                        <video id="scannerVideo" playsinline></video>
+                        <div class="scanner-overlay">
+                            <div class="scanner-frame"></div>
+                        </div>
+                    </div>
+                    <button class="btn-primary" id="startScannerBtn" onclick="startQrScanner()">
+                        📷 Kamera starten
+                    </button>
+                    <button class="btn-secondary" onclick="importFromClipboard()">
+                        📋 Aus Zwischenablage importieren
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast -->
+    <div class="toast" id="toast"></div>
+
+    <!-- Version Footer -->
+    <div style="position: fixed; bottom: 70px; left: 0; right: 0; text-align: center; font-size: 0.7rem; color: var(--text-dim); opacity: 0.5;">
+        v2.6.0
+    </div>
+
+    <!-- QR Code Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    
+    <!-- jsQR for scanning -->
+    <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
+
+    <script>
+        // ============================================
+        // Shelly BLE Garage Door Opener PWA - Multi Device
+        // ============================================
+
+        // Shelly BLE GATT UUIDs
+        const SHELLY_SERVICE_UUID = '5f6d4f53-5f52-5043-5f53-56435f49445f';
+        const SHELLY_RPC_DATA_UUID = '5f6d4f53-5f52-5043-5f64-6174615f5f5f';
+        const SHELLY_RPC_TX_CTL_UUID = '5f6d4f53-5f52-5043-5f74-785f63746c5f';
+        const SHELLY_RPC_RX_CTL_UUID = '5f6d4f53-5f52-5043-5f72-785f63746c5f';
+
+        // State
+        let devices = [];
+        let connections = {}; // MAC -> {device, server, chars, authRealm, authNonce}
+        let editingDeviceId = null;
+        let scannerStream = null;
+        let scannerInterval = null;
+        let debugMode = localStorage.getItem('garage_debug') === 'true';
+
+        // Debug logging
+        function debug(...args) {
+            if (debugMode) {
+                console.log('[Garage]', ...args);
+            }
+        }
+
+        // ============================================
+        // Storage
+        // ============================================
+        function loadDevices() {
+            const saved = localStorage.getItem('garage_devices');
+            devices = saved ? JSON.parse(saved) : [];
+            renderDevices();
+        }
+
+        function saveDevices() {
+            localStorage.setItem('garage_devices', JSON.stringify(devices));
+        }
+
+        // ============================================
+        // UI Rendering
+        // ============================================
+        function renderDevices() {
+            const list = document.getElementById('deviceList');
+            const empty = document.getElementById('emptyState');
+
+            if (devices.length === 0) {
+                list.innerHTML = '';
+                empty.style.display = 'block';
+                return;
+            }
+
+            empty.style.display = 'none';
+            
+            list.innerHTML = devices.map((device, index) => {
+                const conn = connections[device.mac];
+                const isConnected = conn && conn.connected;
+                const isConnecting = conn && conn.connecting;
+                
+                let statusClass = '';
+                let statusText = 'Nicht verbunden';
+                
+                if (isConnecting) {
+                    statusClass = 'connecting';
+                    statusText = 'Verbinde...';
+                } else if (isConnected) {
+                    statusClass = 'connected';
+                    statusText = 'Verbunden';
+                }
+
+                return `
+                    <div class="device-card ${statusClass}" data-index="${index}">
+                        <div class="device-icon">
+                            <svg viewBox="0 0 24 24">
+                                <path d="M3 21h18M3 7v14M21 7v14M5 7l7-4 7 4M9 21v-6h6v6" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                        </div>
+                        <div class="device-info" onclick="connectAndTrigger(${index})">
+                            <div class="device-name">${escapeHtml(device.name)}</div>
+                            <div class="device-mac">${device.mac.toUpperCase()}</div>
+                            <div class="device-status ${statusClass}">${statusText}</div>
+                        </div>
+                        <button class="btn-icon" onclick="event.stopPropagation(); showEditModal(${index})" title="Bearbeiten">
+                            <svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                        </button>
+                        <button class="btn-trigger" onclick="event.stopPropagation(); connectAndTrigger(${index})" ${isConnecting ? 'disabled' : ''} title="Auslösen">
+                            <svg viewBox="0 0 24 24"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+                        </button>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // ============================================
+        // Toast
+        // ============================================
+        function showToast(message, type = 'info') {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.className = `toast show ${type}`;
+            setTimeout(() => toast.classList.remove('show'), 3000);
+        }
+
+        // ============================================
+        // Modals
+        // ============================================
+        function showAddModal() {
+            document.getElementById('addName').value = '';
+            document.getElementById('addMac').value = '';
+            document.getElementById('addPassword').value = '';
+            document.getElementById('scanResults').innerHTML = '';
+            switchTab('manual');
+            document.getElementById('addModal').classList.add('show');
+        }
+
+        function showEditModal(index) {
+            const device = devices[index];
+            editingDeviceId = index;
+            document.getElementById('editName').value = device.name;
+            document.getElementById('editMac').value = device.mac.toUpperCase();
+            document.getElementById('editPassword').value = device.password || '';
+            document.getElementById('editModal').classList.add('show');
+        }
+
+        function showShareModal() {
+            switchShareTab('export');
+            document.getElementById('shareModal').classList.add('show');
+            generateQrCode();
+        }
+
+        function showSettingsModal() {
+            document.getElementById('debugToggle').checked = debugMode;
+            document.getElementById('debugLog').style.display = debugMode ? 'block' : 'none';
+            document.getElementById('settingsModal').classList.add('show');
+        }
+
+        function toggleDebug() {
+            debugMode = document.getElementById('debugToggle').checked;
+            localStorage.setItem('garage_debug', debugMode);
+            document.getElementById('debugLog').style.display = debugMode ? 'block' : 'none';
+            showToast(debugMode ? 'Debug-Logging aktiviert' : 'Debug-Logging deaktiviert', 'success');
+            debug('Debug mode:', debugMode);
+        }
+
+        function logToUI(msg) {
+            if (!debugMode) return;
+            const logOutput = document.getElementById('logOutput');
+            if (logOutput) {
+                const time = new Date().toLocaleTimeString('de-DE');
+                logOutput.innerHTML = `<div>[${time}] ${msg}</div>` + logOutput.innerHTML;
+            }
+        }
+
+        function closeModal(id) {
+            document.getElementById(id).classList.remove('show');
+            stopQrScanner();
+        }
+
+        function switchTab(tab) {
+            document.querySelectorAll('#addModal .tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('#addModal .tab-content').forEach(c => c.classList.remove('active'));
+            document.querySelector(`#addModal .tab:nth-child(${tab === 'manual' ? 1 : 2})`).classList.add('active');
+            document.getElementById(`tab-${tab}`).classList.add('active');
+        }
+
+        function switchShareTab(tab) {
+            document.querySelectorAll('#shareModal .tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('#shareModal .tab-content').forEach(c => c.classList.remove('active'));
+            document.querySelector(`#shareModal .tab:nth-child(${tab === 'export' ? 1 : 2})`).classList.add('active');
+            document.getElementById(`tab-${tab}`).classList.add('active');
+            
+            if (tab === 'export') {
+                generateQrCode();
+                stopQrScanner();
+            }
+        }
+
+        // ============================================
+        // Device Management
+        // ============================================
+        function addDeviceManual() {
+            const name = document.getElementById('addName').value.trim();
+            let mac = document.getElementById('addMac').value.trim().toLowerCase();
+            const password = document.getElementById('addPassword').value;
+
+            if (!name) {
+                showToast('Bitte Namen eingeben', 'error');
+                return;
+            }
+
+            // Validate and normalize MAC
+            mac = mac.replace(/[^a-f0-9]/gi, '');
+            if (mac.length !== 12) {
+                showToast('Ungültige MAC-Adresse', 'error');
+                return;
+            }
+            mac = mac.match(/.{2}/g).join(':');
+
+            // Check duplicate
+            if (devices.some(d => d.mac === mac)) {
+                showToast('Gerät bereits vorhanden', 'error');
+                return;
+            }
+
+            devices.push({ name, mac, password });
+            saveDevices();
+            renderDevices();
+            closeModal('addModal');
+            showToast(`${name} hinzugefügt`, 'success');
+        }
+
+        function saveDevice() {
+            if (editingDeviceId === null) return;
+            
+            const name = document.getElementById('editName').value.trim();
+            const password = document.getElementById('editPassword').value;
+
+            if (!name) {
+                showToast('Bitte Namen eingeben', 'error');
+                return;
+            }
+
+            devices[editingDeviceId].name = name;
+            devices[editingDeviceId].password = password;
+            saveDevices();
+            renderDevices();
+            closeModal('editModal');
+            showToast('Gespeichert', 'success');
+        }
+
+        function deleteDevice() {
+            if (editingDeviceId === null) return;
+            
+            const device = devices[editingDeviceId];
+            if (confirm(`"${device.name}" wirklich löschen?`)) {
+                // Disconnect if connected
+                if (connections[device.mac]) {
+                    try {
+                        connections[device.mac].device.gatt.disconnect();
+                    } catch (e) {}
+                    delete connections[device.mac];
+                }
+                
+                devices.splice(editingDeviceId, 1);
+                saveDevices();
+                renderDevices();
+                closeModal('editModal');
+                showToast('Gelöscht', 'success');
+            }
+        }
+
+        // ============================================
+        // Bluetooth Scanning
+        // ============================================
+        
+        // Extract MAC from Shelly device name (e.g., "ShellyPlus2PM-CCDBA7CFEB00" → "CC:DB:A7:CF:EB:00")
+        function extractMacFromName(name) {
+            // Shelly names end with MAC suffix (12 hex chars)
+            const match = name.match(/-([A-F0-9]{12})$/i);
+            if (match) {
+                const hex = match[1].toUpperCase();
+                return hex.match(/.{2}/g).join(':');
+            }
+            return null;
+        }
+        
+        async function scanForDevices() {
+            try {
+                const device = await navigator.bluetooth.requestDevice({
+                    filters: [{ namePrefix: 'Shelly' }],
+                    optionalServices: [SHELLY_SERVICE_UUID]
+                });
+
+                const extractedMac = extractMacFromName(device.name);
+                const macDisplay = extractedMac || device.id;
+
+                document.getElementById('scanResults').innerHTML = `
+                    <div class="device-card" style="cursor: pointer;" onclick="addScannedDevice('${device.name}', '${extractedMac || ''}')">
+                        <div class="device-icon">
+                            <svg viewBox="0 0 24 24">
+                                <path d="M3 21h18M3 7v14M21 7v14M5 7l7-4 7 4M9 21v-6h6v6" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                        </div>
+                        <div class="device-info">
+                            <div class="device-name">${device.name}</div>
+                            <div class="device-mac">${macDisplay}</div>
+                            ${extractedMac ? '<div class="device-status" style="color: var(--success);">✓ MAC erkannt</div>' : '<div class="device-status" style="color: var(--warning);">MAC manuell eingeben</div>'}
+                        </div>
+                    </div>
+                `;
+            } catch (error) {
+                if (error.name !== 'NotFoundError') {
+                    showToast('Scan fehlgeschlagen: ' + error.message, 'error');
+                }
+            }
+        }
+
+        function addScannedDevice(name, mac) {
+            // Use a friendly name (remove model prefix if present)
+            const friendlyName = name.replace(/^Shelly[A-Za-z0-9]+-/, '');
+            document.getElementById('addName').value = friendlyName || name;
+            document.getElementById('addMac').value = mac;
+            switchTab('manual');
+            
+            if (mac) {
+                showToast('MAC automatisch erkannt!', 'success');
+            } else {
+                showToast('Bitte MAC manuell aus Shelly-Webinterface eintragen', 'info');
+            }
+        }
+
+        // ============================================
+        // BLE Communication
+        // ============================================
+        async function sha256(message) {
+            const msgBuffer = new TextEncoder().encode(message);
+            const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+            return Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
+        }
+
+        async function calculateAuthResponse(password, realm, nonce) {
+            const cnonce = Math.floor(Date.now() / 1000);
+            const nc = 1;
+            const ha1 = await sha256(`admin:${realm}:${password}`);
+            const ha2 = await sha256('dummy_method:dummy_uri');
+            const response = await sha256(`${ha1}:${nonce}:${nc}:${cnonce}:auth:${ha2}`);
+            return { realm, username: 'admin', nonce, cnonce, response, nc, algorithm: 'SHA-256' };
+        }
+
+        async function sendRpcCommand(conn, method, params = {}, includeAuth = false) {
+            const rpcRequest = {
+                id: Date.now(),
+                src: 'garage_pwa',
+                method,
+                params
+            };
+
+            if (includeAuth && conn.authRealm && conn.authNonce && conn.password) {
+                debug('Adding auth to request');
+                rpcRequest.auth = await calculateAuthResponse(conn.password, conn.authRealm, conn.authNonce);
+            }
+
+            const jsonStr = JSON.stringify(rpcRequest);
+            const bytes = new TextEncoder().encode(jsonStr);
+
+            debug('TX:', method, params, '| Size:', bytes.length, 'bytes');
+            logToUI('TX: ' + method + ' (' + bytes.length + ' bytes)');
+
+            // Send length
+            const lenBuffer = new ArrayBuffer(4);
+            new DataView(lenBuffer).setUint32(0, bytes.length, false);
+            await conn.txCtl.writeValue(lenBuffer);
+
+            // Send data
+            const chunkSize = 512;
+            for (let i = 0; i < bytes.length; i += chunkSize) {
+                await conn.data.writeValue(bytes.slice(i, i + chunkSize));
+                debug('Sent chunk', Math.floor(i/chunkSize) + 1, 'of', Math.ceil(bytes.length/chunkSize));
+            }
+
+            // Read response
+            await new Promise(r => setTimeout(r, 100));
+            
+            const rxLenValue = await conn.rxCtl.readValue();
+            const responseLen = new DataView(rxLenValue.buffer).getUint32(0, false);
+            
+            debug('Response length:', responseLen, 'bytes');
+
+            if (responseLen === 0) {
+                debug('Empty response');
+                return null;
+            }
+
+            let responseData = new Uint8Array(0);
+            while (responseData.length < responseLen) {
+                const chunk = await conn.data.readValue();
+                const newData = new Uint8Array(responseData.length + chunk.byteLength);
+                newData.set(responseData);
+                newData.set(new Uint8Array(chunk.buffer), responseData.length);
+                responseData = newData;
+            }
+
+            const response = JSON.parse(new TextDecoder().decode(responseData));
+            debug('RX:', response);
+            logToUI('RX: ' + JSON.stringify(response).substring(0, 100));
+
+            // Handle auth error
+            if (response.error && response.error.code === 401) {
+                const authInfo = JSON.parse(response.error.message);
+                conn.authRealm = authInfo.realm;
+                conn.authNonce = authInfo.nonce;
+                debug('Auth required, retrying with credentials. Realm:', authInfo.realm);
+                logToUI('Auth erforderlich, wiederhole...');
+                return sendRpcCommand(conn, method, params, true);
+            }
+
+            return response;
+        }
+
+        // Build smart BLE filters based on MAC address
+        function buildBleFilters(mac) {
+            // Extract MAC suffix (last 6 bytes, no colons, uppercase)
+            // e.g., "cc:db:a7:cf:eb:02" → "CCDBA7CFEB02"
+            const macSuffix = mac.replace(/:/g, '').toUpperCase();
+            
+            // Common Shelly model prefixes - device names are like "ShellyPlus2PM-CCDBA7CFEB00"
+            const modelPrefixes = [
+                // Gen 2 (Plus)
+                'ShellyPlus1',
+                'ShellyPlus1PM',
+                'ShellyPlus2PM',
+                'ShellyPlusI4',
+                'ShellyPlusPlugS',
+                'ShellyPlusPlugIT',
+                'ShellyPlusPlugUK',
+                'ShellyPlusPlugUS',
+                'ShellyPlusDimmer',
+                'ShellyPlusRGBW',
+                'ShellyPlusSmoke',
+                'ShellyPlusHT',
+                'ShellyPlusWallDimmer',
+                'ShellyPlusUni',
+                // Gen 2 (Pro)
+                'ShellyPro1',
+                'ShellyPro1PM',
+                'ShellyPro2',
+                'ShellyPro2PM',
+                'ShellyPro3',
+                'ShellyPro4PM',
+                'ShellyProDualCover',
+                'ShellyProDimmer',
+                // Gen 3
+                'Shelly1G3',
+                'Shelly1PMG3',
+                'ShellyI4G3',
+                'ShellyHTG3',
+                // Gen 4 / Plus Strip etc
+                'ShellyPStripG4',
+                'Shelly1G4',
+                'Shelly1PMG4',
+                'Shelly2PMG4',
+                // Wall Display
+                'ShellyWallDisplay',
+                // BLU Gateway
+                'ShellyBLUGateway',
+            ];
+            
+            // Create filter for each possible model with this MAC
+            // NO FALLBACK - only exact matches!
+            const filters = modelPrefixes.map(prefix => ({
+                namePrefix: `${prefix}-${macSuffix}`
+            }));
+            
+            console.log('BLE filters for MAC', macSuffix, '- looking for device ending with this suffix');
+            debug('Built', filters.length, 'BLE filters for MAC suffix:', macSuffix);
+            return filters;
+        }
+
+        // ============================================
+        // BLE Connection
+        // ============================================
+        
+        // Try to get previously paired device without showing picker
+        async function getPairedDevice(macSuffix) {
+            // Check if getDevices() is available (Chrome 85+, requires HTTPS)
+            if (!navigator.bluetooth.getDevices) {
+                debug('getDevices() not available - will use picker');
+                return null;
+            }
+            
+            try {
+                const pairedDevices = await navigator.bluetooth.getDevices();
+                debug('Found', pairedDevices.length, 'paired devices');
+                
+                for (const device of pairedDevices) {
+                    if (device.name && device.name.toUpperCase().includes(macSuffix)) {
+                        debug('Found matching paired device:', device.name);
+                        
+                        // Need to request permission again via watchAdvertisements
+                        // to "wake up" the device reference
+                        const abortController = new AbortController();
+                        
+                        await device.watchAdvertisements({ signal: abortController.signal });
+                        
+                        // Wait briefly for advertisement
+                        await new Promise(r => setTimeout(r, 500));
+                        abortController.abort();
+                        
+                        return device;
+                    }
+                }
+                
+                debug('No matching paired device found');
+                return null;
+            } catch (error) {
+                debug('getDevices() error:', error.message);
+                return null;
+            }
+        }
+
+        async function connectAndTrigger(index) {
+            const device = devices[index];
+            let conn = connections[device.mac];
+
+            // Update UI to connecting
+            if (!conn) {
+                conn = { connecting: true, connected: false };
+                connections[device.mac] = conn;
+            }
+            conn.connecting = true;
+            conn.password = device.password;
+            renderDevices();
+
+            try {
+                // Connect if not connected
+                if (!conn.server || !conn.device?.gatt?.connected) {
+                    const macSuffix = device.mac.replace(/:/g, '').toUpperCase();
+                    debug('Connecting to', device.name, 'MAC:', device.mac);
+                    logToUI('Verbinde mit ' + device.name);
+                    
+                    let bleDevice = null;
+                    
+                    // First, try to get previously paired device (no picker!)
+                    bleDevice = await getPairedDevice(macSuffix);
+                    
+                    // If not found, fall back to picker
+                    if (!bleDevice) {
+                        debug('Using device picker...');
+                        logToUI('Wähle Gerät aus...');
+                        
+                        const filters = buildBleFilters(device.mac);
+                        debug('Requesting BLE device with', filters.length, 'filters');
+                        
+                        bleDevice = await navigator.bluetooth.requestDevice({
+                            filters: filters,
+                            optionalServices: [SHELLY_SERVICE_UUID]
+                        });
+                    }
+                    
+                    // Verify the selected device matches our MAC
+                    const selectedName = bleDevice.name || '';
+                    debug('Selected device:', selectedName);
+                    logToUI('Gerät: ' + selectedName);
+                    
+                    if (!selectedName.toUpperCase().includes(macSuffix)) {
+                        throw new Error(`Falsches Gerät gewählt! Erwartet: ...${macSuffix}`);
+                    }
+
+                    bleDevice.addEventListener('gattserverdisconnected', () => {
+                        debug('Disconnected from', device.name);
+                        logToUI('Getrennt von ' + device.name);
+                        if (connections[device.mac]) {
+                            connections[device.mac].connected = false;
+                            connections[device.mac].connecting = false;
+                        }
+                        renderDevices();
+                    });
+
+                    debug('Connecting to GATT server...');
+                    const server = await bleDevice.gatt.connect();
+                    debug('Getting primary service...');
+                    const service = await server.getPrimaryService(SHELLY_SERVICE_UUID);
+                    
+                    debug('Getting characteristics...');
+                    conn.device = bleDevice;
+                    conn.server = server;
+                    conn.service = service;
+                    conn.data = await service.getCharacteristic(SHELLY_RPC_DATA_UUID);
+                    conn.txCtl = await service.getCharacteristic(SHELLY_RPC_TX_CTL_UUID);
+                    conn.rxCtl = await service.getCharacteristic(SHELLY_RPC_RX_CTL_UUID);
+                    conn.connected = true;
+                    
+                    debug('Connected successfully!');
+                    logToUI('Verbunden mit ' + device.name);
+                }
+
+                // Send trigger command
+                debug('Sending Switch.Set command');
+                logToUI('Sende Switch.Set on:true');
+                const result = await sendRpcCommand(conn, 'Switch.Set', { id: 0, on: true });
+                
+                debug('RPC result:', result);
+                logToUI('Antwort: ' + JSON.stringify(result));
+                
+                conn.connecting = false;
+                renderDevices();
+
+                if (result && result.result !== undefined) {
+                    showToast(`${device.name} ausgelöst!`, 'success');
+                } else if (result && result.error) {
+                    showToast(`Fehler: ${result.error.message}`, 'error');
+                }
+
+            } catch (error) {
+                console.error('Error:', error);
+                debug('Error:', error.name, error.message);
+                logToUI('FEHLER: ' + error.message);
+                conn.connecting = false;
+                conn.connected = false;
+                renderDevices();
+                
+                if (error.name === 'NotFoundError') {
+                    // User cancelled OR no matching device found
+                    const macSuffix = device.mac.replace(/:/g, '').toUpperCase();
+                    showToast(`Kein Gerät mit MAC ...${macSuffix.slice(-6)} gefunden`, 'error');
+                } else {
+                    showToast(`Fehler: ${error.message}`, 'error');
+                }
+            }
+        }
+
+        // ============================================
+        // QR Code Export/Import
+        // ============================================
+        function generateQrCode() {
+            const container = document.getElementById('qrContainer');
+            
+            if (devices.length === 0) {
+                container.innerHTML = '<p style="color: var(--text-dim); padding: 40px;">Keine Geräte zum Teilen</p>';
+                return;
+            }
+
+            // Create config object (without passwords for security!)
+            const config = {
+                v: 1, // version
+                d: devices.map(d => ({
+                    n: d.name,
+                    m: d.mac
+                    // Note: password not included for security
+                }))
+            };
+
+            // Encode config as base64 and append to current URL
+            const configBase64 = btoa(JSON.stringify(config));
+            const baseUrl = window.location.href.split('#')[0].split('?')[0];
+            const shareUrl = `${baseUrl}#import=${configBase64}`;
+            
+            debug('Share URL:', shareUrl);
+            
+            // Clear container and create new QR code
+            container.innerHTML = '<div id="qrCodeDiv"></div>';
+            
+            new QRCode(document.getElementById('qrCodeDiv'), {
+                text: shareUrl,
+                width: 200,
+                height: 200,
+                colorDark: '#000000',
+                colorLight: '#ffffff',
+                correctLevel: QRCode.CorrectLevel.L  // Lower correction = more data capacity
+            });
+        }
+
+        function copyConfigToClipboard() {
+            const config = {
+                v: 1,
+                d: devices.map(d => ({ n: d.name, m: d.mac }))
+            };
+            
+            const configBase64 = btoa(JSON.stringify(config));
+            const baseUrl = window.location.href.split('#')[0].split('?')[0];
+            const shareUrl = `${baseUrl}#import=${configBase64}`;
+            
+            navigator.clipboard.writeText(shareUrl).then(() => {
+                showToast('Link kopiert', 'success');
+            }).catch(() => {
+                showToast('Kopieren fehlgeschlagen', 'error');
+            });
+        }
+
+        async function importFromClipboard() {
+            try {
+                const text = await navigator.clipboard.readText();
+                importConfig(text);
+            } catch (error) {
+                showToast('Zugriff auf Zwischenablage verweigert', 'error');
+            }
+        }
+
+        function importConfig(configStr) {
+            try {
+                let config;
+                
+                // Check if it's a URL with #import= parameter
+                if (configStr.includes('#import=')) {
+                    const base64 = configStr.split('#import=')[1];
+                    config = JSON.parse(atob(base64));
+                } 
+                // Check if it's just base64 (from URL hash)
+                else if (!configStr.startsWith('{')) {
+                    config = JSON.parse(atob(configStr));
+                }
+                // Raw JSON
+                else {
+                    config = JSON.parse(configStr);
+                }
+                
+                if (!config.v || !config.d || !Array.isArray(config.d)) {
+                    throw new Error('Ungültiges Format');
+                }
+
+                let added = 0;
+                for (const d of config.d) {
+                    const mac = d.m.toLowerCase();
+                    if (!devices.some(existing => existing.mac === mac)) {
+                        devices.push({
+                            name: d.n,
+                            mac: mac,
+                            password: ''
+                        });
+                        added++;
+                    }
+                }
+
+                if (added > 0) {
+                    saveDevices();
+                    renderDevices();
+                    showToast(`${added} Gerät(e) importiert`, 'success');
+                    debug('Imported', added, 'devices');
+                } else {
+                    showToast('Alle Geräte bereits vorhanden', 'info');
+                }
+                
+                // Clear URL hash after import
+                if (window.location.hash) {
+                    history.replaceState(null, '', window.location.pathname);
+                }
+
+                return true;
+            } catch (error) {
+                debug('Import error:', error.message);
+                showToast('Import fehlgeschlagen: ' + error.message, 'error');
+                return false;
+            }
+        }
+        
+        // Check URL for import parameter on page load
+        function checkUrlImport() {
+            const hash = window.location.hash;
+            if (hash && hash.startsWith('#import=')) {
+                debug('Found import in URL');
+                const base64 = hash.substring(8); // Remove '#import='
+                importConfig(base64);
+            }
+        }
+
+        // ============================================
+        // QR Scanner
+        // ============================================
+        async function startQrScanner() {
+            const container = document.getElementById('scannerContainer');
+            const video = document.getElementById('scannerVideo');
+            const btn = document.getElementById('startScannerBtn');
+
+            try {
+                scannerStream = await navigator.mediaDevices.getUserMedia({
+                    video: { facingMode: 'environment' }
+                });
+                
+                video.srcObject = scannerStream;
+                video.play();
+                container.style.display = 'block';
+                btn.style.display = 'none';
+
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+
+                scannerInterval = setInterval(() => {
+                    if (video.readyState === video.HAVE_ENOUGH_DATA) {
+                        canvas.width = video.videoWidth;
+                        canvas.height = video.videoHeight;
+                        ctx.drawImage(video, 0, 0);
+                        
+                        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                        const code = jsQR(imageData.data, imageData.width, imageData.height);
+                        
+                        if (code) {
+                            debug('QR code scanned:', code.data.substring(0, 50) + '...');
+                            stopQrScanner();
+                            closeModal('shareModal');
+                            
+                            // Handle URL with #import= or raw JSON
+                            if (code.data.includes('#import=')) {
+                                const base64 = code.data.split('#import=')[1];
+                                importConfig(base64);
+                            } else {
+                                importConfig(code.data);
+                            }
+                        }
+                    }
+                }, 200);
+
+            } catch (error) {
+                showToast('Kamera-Zugriff verweigert', 'error');
+            }
+        }
+
+        function stopQrScanner() {
+            if (scannerInterval) {
+                clearInterval(scannerInterval);
+                scannerInterval = null;
+            }
+            if (scannerStream) {
+                scannerStream.getTracks().forEach(track => track.stop());
+                scannerStream = null;
+            }
+            document.getElementById('scannerContainer').style.display = 'none';
+            document.getElementById('startScannerBtn').style.display = 'block';
+        }
+
+        // ============================================
+        // Auto-Update
+        // ============================================
+        const CURRENT_VERSION = '2.6.0';
+        
+        async function checkForUpdates(showNoUpdate = false) {
+            try {
+                // Fetch version.json with cache-busting
+                const response = await fetch(`./version.json?t=${Date.now()}`, {
+                    cache: 'no-store'
+                });
+                
+                if (!response.ok) {
+                    debug('Version check failed:', response.status);
+                    return;
+                }
+                
+                const versionInfo = await response.json();
+                debug('Server version:', versionInfo.version, '| Local:', CURRENT_VERSION);
+                
+                if (versionInfo.version !== CURRENT_VERSION) {
+                    debug('Update available!');
+                    showUpdateNotification(versionInfo.version);
+                } else if (showNoUpdate) {
+                    showToast('App ist aktuell (v' + CURRENT_VERSION + ')', 'success');
+                }
+            } catch (error) {
+                debug('Update check error:', error.message);
+            }
+        }
+        
+        function showUpdateNotification(newVersion) {
+            // Create update banner if not exists
+            if (document.getElementById('updateBanner')) return;
+            
+            const banner = document.createElement('div');
+            banner.id = 'updateBanner';
+            banner.innerHTML = `
+                <div style="position: fixed; top: 0; left: 0; right: 0; background: var(--accent); color: white; padding: 12px 20px; display: flex; align-items: center; justify-content: space-between; z-index: 1000; font-size: 0.9rem;">
+                    <span>🎉 Neue Version ${newVersion} verfügbar!</span>
+                    <div style="display: flex; gap: 10px;">
+                        <button onclick="performUpdate()" style="background: white; color: var(--accent); border: none; padding: 8px 16px; border-radius: 6px; font-weight: 600; cursor: pointer;">
+                            Jetzt aktualisieren
+                        </button>
+                        <button onclick="dismissUpdate()" style="background: transparent; color: white; border: 1px solid white; padding: 8px 12px; border-radius: 6px; cursor: pointer;">
+                            ✕
+                        </button>
+                    </div>
+                </div>
+            `;
+            document.body.prepend(banner);
+        }
+        
+        function dismissUpdate() {
+            const banner = document.getElementById('updateBanner');
+            if (banner) banner.remove();
+        }
+        
+        async function performUpdate() {
+            showToast('Aktualisiere...', 'info');
+            
+            try {
+                // 1. Unregister all service workers
+                const registrations = await navigator.serviceWorker.getRegistrations();
+                await Promise.all(registrations.map(r => r.unregister()));
+                debug('Service workers unregistered');
+                
+                // 2. Clear all caches
+                const cacheKeys = await caches.keys();
+                await Promise.all(cacheKeys.map(key => caches.delete(key)));
+                debug('Caches cleared');
+                
+                // 3. Hard reload
+                window.location.reload(true);
+            } catch (error) {
+                debug('Update error:', error.message);
+                showToast('Update fehlgeschlagen', 'error');
+            }
+        }
+        
+        // ============================================
+        // Init
+        // ============================================
+        debug('Initializing Garage PWA v2.6.0');
+        debug('Debug mode:', debugMode);
+        debug('Web Bluetooth supported:', !!navigator.bluetooth);
+        
+        if (!navigator.bluetooth) {
+            showToast('Web Bluetooth nicht unterstützt - nutze Chrome (Android) oder Bluefy (iOS)', 'error');
+        }
+
+        loadDevices();
+        debug('Loaded', devices.length, 'devices from storage');
+        
+        // Check if URL contains import data
+        checkUrlImport();
+        
+        // Check for updates after 3 seconds, then every 5 minutes
+        setTimeout(() => checkForUpdates(), 3000);
+        setInterval(() => checkForUpdates(), 5 * 60 * 1000);
+
+        // PWA Service Worker
+        if ('serviceWorker' in navigator) {
+            // Unregister old, register new
+            navigator.serviceWorker.getRegistrations().then(regs => {
+                return Promise.all(regs.map(r => r.unregister()));
+            }).then(() => {
+                return navigator.serviceWorker.register('sw.js');
+            }).then(() => {
+                debug('Service Worker registered');
+            }).catch(err => {
+                debug('Service Worker error:', err.message);
+            });
+        }
+    </script>
+</body>
+</html>
