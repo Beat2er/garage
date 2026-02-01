@@ -1,7 +1,9 @@
 package de.beat2er.garage
 
 import android.Manifest
+import android.content.Intent
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -48,6 +50,10 @@ class MainActivity : ComponentActivity() {
                     onToggleDebug = viewModel::toggleDebugMode,
                     onClearLogs = viewModel::clearDebugLogs,
                     onShowToast = viewModel::showToast,
+                    onDismissUpdate = viewModel::dismissUpdate,
+                    onOpenDownload = { url ->
+                        startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+                    },
                     modifier = Modifier.fillMaxSize()
                 )
             }

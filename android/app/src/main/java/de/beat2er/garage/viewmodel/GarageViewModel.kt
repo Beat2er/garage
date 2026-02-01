@@ -13,6 +13,8 @@ import androidx.lifecycle.viewModelScope
 import de.beat2er.garage.ble.ShellyBleManager
 import de.beat2er.garage.data.Device
 import de.beat2er.garage.data.DeviceRepository
+import de.beat2er.garage.update.UpdateChecker
+import de.beat2er.garage.update.UpdateInfo
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -49,7 +51,8 @@ data class GarageUiState(
     val isScanning: Boolean = false,
     val scanResults: List<BleScanDevice> = emptyList(),
     val debugMode: Boolean = false,
-    val debugLogs: List<String> = emptyList()
+    val debugLogs: List<String> = emptyList(),
+    val updateInfo: UpdateInfo? = null
 )
 
 class GarageViewModel(application: Application) : AndroidViewModel(application) {
@@ -70,11 +73,28 @@ class GarageViewModel(application: Application) : AndroidViewModel(application) 
     init {
         _uiState.update { it.copy(debugMode = prefs.getBoolean("debug_mode", false)) }
         loadDevices()
+        checkForUpdate()
     }
 
     private fun loadDevices() {
         val devices = repository.getDevices()
         _uiState.update { it.copy(devices = devices) }
+    }
+
+    // ========== Update ==========
+
+    private fun checkForUpdate() {
+        viewModelScope.launch {
+            val info = UpdateChecker.check()
+            if (info != null) {
+                _uiState.update { it.copy(updateInfo = info) }
+                addDebugLog("Update verfuegbar: ${info.versionName}")
+            }
+        }
+    }
+
+    fun dismissUpdate() {
+        _uiState.update { it.copy(updateInfo = null) }
     }
 
     // ========== Debug ==========

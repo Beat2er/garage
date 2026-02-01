@@ -29,6 +29,7 @@ import de.beat2er.garage.ui.components.EditDeviceSheet
 import de.beat2er.garage.ui.components.SettingsSheet
 import de.beat2er.garage.ui.components.ShareSheet
 import de.beat2er.garage.ui.theme.*
+import de.beat2er.garage.update.UpdateInfo
 import de.beat2er.garage.viewmodel.DeviceUiState
 import de.beat2er.garage.viewmodel.GarageUiState
 
@@ -47,6 +48,8 @@ fun HomeScreen(
     onToggleDebug: () -> Unit,
     onClearLogs: () -> Unit,
     onShowToast: (String, Boolean) -> Unit,
+    onDismissUpdate: () -> Unit,
+    onOpenDownload: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
     var showAddSheet by remember { mutableStateOf(false) }
@@ -107,6 +110,61 @@ fun HomeScreen(
                     style = MaterialTheme.typography.bodySmall,
                     color = TextDim
                 )
+            }
+
+            // Update-Banner
+            val updateInfo = uiState.updateInfo
+            if (updateInfo != null) {
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 20.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = CardDefaults.cardColors(containerColor = BgCard),
+                    border = CardDefaults.outlinedCardBorder().let {
+                        androidx.compose.foundation.BorderStroke(1.dp, Accent)
+                    }
+                ) {
+                    Column(
+                        modifier = Modifier.padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Text(
+                            text = "Update verfuegbar: v${updateInfo.versionName}",
+                            style = MaterialTheme.typography.titleSmall,
+                            color = Accent
+                        )
+                        if (updateInfo.changelog.isNotBlank()) {
+                            Text(
+                                text = updateInfo.changelog,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = TextDim
+                            )
+                        }
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Button(
+                                onClick = { onOpenDownload(updateInfo.downloadUrl) },
+                                shape = RoundedCornerShape(8.dp),
+                                colors = ButtonDefaults.buttonColors(containerColor = Accent),
+                                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
+                            ) {
+                                Text("Herunterladen", style = MaterialTheme.typography.bodySmall)
+                            }
+                            OutlinedButton(
+                                onClick = onDismissUpdate,
+                                shape = RoundedCornerShape(8.dp),
+                                colors = ButtonDefaults.outlinedButtonColors(contentColor = TextDim),
+                                border = androidx.compose.foundation.BorderStroke(1.dp, Border),
+                                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
+                            ) {
+                                Text("Spaeter", style = MaterialTheme.typography.bodySmall)
+                            }
+                        }
+                    }
+                }
+                Spacer(modifier = Modifier.height(12.dp))
             }
 
             // Content

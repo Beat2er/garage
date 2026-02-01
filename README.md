@@ -1,17 +1,33 @@
-# 🚗 Shelly BLE Garage Door Opener
+# Shelly BLE Garage Door Opener
 
-Steuere Shelly-Geräte via Bluetooth Low Energy - ohne WLAN!
+Steuere Shelly-Geraete via Bluetooth Low Energy - ohne WLAN!
 
-## Projektübersicht
+## Projektstruktur
 
 ```
 garage-complete/
-├── pwa/                    # Progressive Web App (Browser)
+├── pwa/                    # Progressive Web App (Quelle)
 │   ├── index.html          # Hauptdatei
 │   ├── sw.js               # Service Worker
 │   ├── manifest.json       # PWA Manifest
 │   ├── version.json        # Auto-Update Version
 │   └── icon-*.png          # App Icons
+│
+├── android/                # Native Android App (Kotlin/Compose)
+│   └── app/src/main/java/de/beat2er/garage/
+│       ├── ble/            # BLE-Kommunikation
+│       ├── data/           # Datenmodelle + Repository
+│       ├── ui/             # Compose UI (Screens, Components, Theme)
+│       ├── update/         # Auto-Update Pruefung
+│       └── viewmodel/      # ViewModel + State
+│
+├── docs/                   # GitHub Pages Deployment
+│   ├── index.html          # PWA (deployed)
+│   ├── sw.js               # Service Worker
+│   ├── manifest.json       # PWA Manifest
+│   └── app/                # Android APK Downloads
+│       ├── index.html      # Download-Seite
+│       └── version.json    # Aktuelle Version + APK-URL
 │
 ├── shelly-script/          # Shelly-seitiges Script
 │   ├── shelly-garage-script.js
@@ -22,51 +38,110 @@ garage-complete/
     └── ANDROID_APP_SPEC.md # Android App Spezifikation
 ```
 
+## Feature-Paritaet
+
+PWA und Android-App werden feature-gleich gehalten:
+
+| Feature | PWA | Android |
+|---------|-----|---------|
+| BLE-Verbindung via MAC | Ja | Ja |
+| Multi-Device Support | Ja | Ja |
+| QR-Code Sharing | Ja | Ja |
+| QR-Code Scanner | Ja | Ja |
+| Bluetooth-Scan | Ja | Ja |
+| Auto-Update Erkennung | Ja | Ja |
+| Debug-Modus | Ja | Ja |
+| Offline-faehig | Ja | Ja |
+| Passwort-Authentifizierung | Ja | Ja |
+
 ## Quick Start
 
 ### 1. Shelly vorbereiten
 
-1. Webinterface öffnen
+1. Webinterface oeffnen
 2. **Settings → Bluetooth:**
-   - Enable Bluetooth ✓
-   - Enable RPC ✓
+   - Enable Bluetooth
+   - Enable RPC
 3. **Scripts → Add Script:**
-   - `shelly-script/shelly-garage-script.js` einfügen
-   - Run on startup ✓
+   - `shelly-script/shelly-garage-script.js` einfuegen
+   - Run on startup aktivieren
 
-### 2. PWA installieren
+### 2a. PWA nutzen (alle Plattformen)
 
-1. Alle Dateien aus `pwa/` auf HTTPS-Server hochladen
-2. **Android:** Chrome → Menü → "Zum Startbildschirm"
-3. **iOS:** Bluefy App → Website öffnen → "Zum Home-Bildschirm"
+Die PWA ist unter **https://beat2er.github.io/garage/** verfuegbar.
 
-### 3. Gerät hinzufügen
+- **Android:** Chrome → Menue → "Zum Startbildschirm"
+- **iOS:** Bluefy App → Website oeffnen → "Zum Home-Bildschirm"
 
-1. App öffnen → "Hinzufügen"
+### 2b. Android App installieren
+
+APK herunterladen: **https://beat2er.github.io/garage/app/**
+
+Die App prueft beim Start automatisch auf Updates.
+
+### 3. Geraet hinzufuegen
+
+1. App oeffnen → "Hinzufuegen"
 2. Name eingeben (z.B. "Hauptgarage")
-3. WiFi-MAC eingeben (steht im Gerätenamen, z.B. `CC:DB:A7:CF:EB:00`)
+3. WiFi-MAC eingeben (steht im Geraetenamen, z.B. `CC:DB:A7:CF:EB:00`)
 4. Optional: Passwort
+
+Alternativ: Bluetooth-Scan nutzen (findet Shelly-Geraete automatisch)
+
+## GitHub Pages Deployment
+
+Die Seite wird ueber `docs/` auf dem `main`-Branch gehostet.
+
+### Einrichtung
+
+1. GitHub Repository → Settings → Pages
+2. Source: **Deploy from a branch**
+3. Branch: `main`, Ordner: `/docs`
+4. Speichern
+
+### PWA aktualisieren
+
+Bei Aenderungen an der PWA (`pwa/`):
+1. Aenderungen in `pwa/` vornehmen
+2. Geaenderte Dateien nach `docs/` kopieren
+3. `docs/version.json` Version erhoehen (fuer Auto-Update)
+
+### APK veroeffentlichen
+
+1. APK bauen (Android Studio → Build → Build APK)
+2. APK nach `docs/app/garage-vX.Y.Z.apk` kopieren
+3. `docs/app/version.json` aktualisieren (versionName, apkUrl, changelog)
+4. Commit + Push
 
 ## Komponenten
 
-### PWA (pwa/)
+### PWA (pwa/ → docs/)
 
-Progressive Web App für Browser:
+Progressive Web App fuer Browser:
 - Multi-Device Support
 - QR-Code Sharing (URL im QR)
 - Auto-Update
 - Auto-Reconnect (Chrome)
-- Offline-fähig
+- Offline-faehig
 
-**Unterstützte Browser:**
+**Unterstuetzte Browser:**
 - Android: Chrome, Edge, Brave
 - iOS: Bluefy App (kostenlos)
 
+### Android App (android/)
+
+Native Android App mit Jetpack Compose:
+- Direktverbindung via MAC (kein Picker)
+- BLE-Scan zum Finden von Geraeten
+- QR-Code Import/Export
+- Auto-Update Erkennung
+- Debug-Logging
+
 ### Shelly Script (shelly-script/)
 
-Optionales Script für Auto-Off Impuls:
+Optionales Script fuer Auto-Off Impuls:
 - 500ms Impuls
-- Cooldown gegen Doppelauslösung
+- Cooldown gegen Doppelausloesung
 - Konfigurierbarer Switch-Kanal
 
 ### Spezifikationen (specs/)
@@ -74,27 +149,18 @@ Optionales Script für Auto-Off Impuls:
 - **PROTOCOL_SPEC.md** - BLE RPC Protokoll, GATT UUIDs, JSON-RPC Format
 - **ANDROID_APP_SPEC.md** - Native Android App Architektur
 
-## Android App
-
-Eine native Android App ermöglicht:
-- Direktverbindung via MAC (kein Picker!)
-- Schnellerer Verbindungsaufbau
-- Home Screen Widget (optional)
-
-Siehe `specs/ANDROID_APP_SPEC.md` für Details.
-
 ## Sicherheit
 
-⚠️ **BLE ist unverschlüsselt!**
+**BLE ist unverschluesselt!**
 
 - Immer Passwort setzen
 - Vergleichbar mit Funk-Fernbedienung
-- Für Garagentor akzeptables Risiko
+- Fuer Garagentor akzeptables Risiko
 
 ## Support
 
 - Shelly Gen2+ erforderlich (Plus, Pro, Gen3, Gen4)
-- Gen1 wird NICHT unterstützt (kein BLE RPC)
+- Gen1 wird NICHT unterstuetzt (kein BLE RPC)
 
 ## Lizenz
 
