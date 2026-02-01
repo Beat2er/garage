@@ -50,6 +50,8 @@ fun HomeScreen(
     onShowToast: (String, Boolean) -> Unit,
     onDismissUpdate: () -> Unit,
     onOpenDownload: (String) -> Unit,
+    onCheckUpdate: () -> Unit,
+    versionName: String,
     modifier: Modifier = Modifier
 ) {
     var showAddSheet by remember { mutableStateOf(false) }
@@ -359,7 +361,9 @@ fun HomeScreen(
             debugMode = uiState.debugMode,
             debugLogs = uiState.debugLogs,
             onToggleDebug = onToggleDebug,
-            onClearLogs = onClearLogs
+            onClearLogs = onClearLogs,
+            versionName = versionName,
+            onCheckUpdate = onCheckUpdate
         )
     }
 }

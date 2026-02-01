@@ -16,6 +16,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
+import de.beat2er.garage.BuildConfig
 import de.beat2er.garage.ui.screens.HomeScreen
 import de.beat2er.garage.ui.theme.GarageTheme
 import de.beat2er.garage.viewmodel.GarageViewModel
@@ -54,6 +55,8 @@ class MainActivity : ComponentActivity() {
                     onOpenDownload = { url ->
                         startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
                     },
+                    onCheckUpdate = { viewModel.checkForUpdate(showUpToDate = true) },
+                    versionName = BuildConfig.VERSION_NAME,
                     modifier = Modifier.fillMaxSize()
                 )
             }

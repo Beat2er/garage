@@ -22,7 +22,9 @@ fun SettingsSheet(
     debugMode: Boolean,
     debugLogs: List<String>,
     onToggleDebug: () -> Unit,
-    onClearLogs: () -> Unit
+    onClearLogs: () -> Unit,
+    versionName: String,
+    onCheckUpdate: () -> Unit
 ) {
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -133,7 +135,7 @@ fun SettingsSheet(
 
             HorizontalDivider(color = Border)
 
-            // Version
+            // Version + Update Check
             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text(
                     text = "VERSION",
@@ -141,10 +143,20 @@ fun SettingsSheet(
                     color = TextDim
                 )
                 Text(
-                    text = "v1.0.0",
+                    text = "v$versionName",
                     style = MaterialTheme.typography.labelMedium,
                     color = TextPrimary
                 )
+                Spacer(modifier = Modifier.height(8.dp))
+                OutlinedButton(
+                    onClick = onCheckUpdate,
+                    modifier = Modifier.fillMaxWidth().height(40.dp),
+                    shape = RoundedCornerShape(8.dp),
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = TextDim),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, Border)
+                ) {
+                    Text("Nach Updates suchen", fontSize = 12.sp)
+                }
             }
         }
     }

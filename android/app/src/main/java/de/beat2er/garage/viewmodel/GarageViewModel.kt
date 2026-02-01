@@ -84,11 +84,17 @@ class GarageViewModel(application: Application) : AndroidViewModel(application) 
     // ========== Update ==========
 
     private fun checkForUpdate() {
+        checkForUpdate(showUpToDate = false)
+    }
+
+    fun checkForUpdate(showUpToDate: Boolean = false) {
         viewModelScope.launch {
             val info = UpdateChecker.check()
             if (info != null) {
                 _uiState.update { it.copy(updateInfo = info) }
                 addDebugLog("Update verfügbar: ${info.versionName}")
+            } else if (showUpToDate) {
+                showToast("App ist aktuell")
             }
         }
     }
