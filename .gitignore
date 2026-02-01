@@ -19,6 +19,7 @@ gradle-app.setting
 *.keystore
 *.jks
 !debug.keystore
+keystore-base64.txt
 
 # OS
 .DS_Store

@@ -20,11 +20,10 @@ android {
 
     signingConfigs {
         create("release") {
-            // CI: nutzt Debug-Keystore. Fuer Play Store durch eigenen Keystore ersetzen.
-            storeFile = signingConfigs.getByName("debug").storeFile
-            storePassword = signingConfigs.getByName("debug").storePassword
-            keyAlias = signingConfigs.getByName("debug").keyAlias
-            keyPassword = signingConfigs.getByName("debug").keyPassword
+            storeFile = file(System.getenv("KEYSTORE_FILE") ?: "release.keystore")
+            storePassword = System.getenv("KEYSTORE_PASSWORD") ?: ""
+            keyAlias = System.getenv("KEY_ALIAS") ?: "garage"
+            keyPassword = System.getenv("KEY_PASSWORD") ?: ""
         }
     }
 

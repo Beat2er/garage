@@ -25,16 +25,9 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
-      - name: Create debug keystore
+      - name: Decode keystore
         run: |
-          mkdir -p ~/.config/.android
-          keytool -genkey -v \
-            -keystore ~/.config/.android/debug.keystore \
-            -storepass android \
-            -alias androiddebugkey \
-            -keypass android \
-            -keyalg RSA -keysize 2048 -validity 10000 \
-            -dname "CN=Android Debug,O=Android,C=US"
+          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > android/app/release.keystore
 
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
@@ -43,6 +36,11 @@ jobs:
 
       - name: Build APK
         working-directory: android
+        env:
+          KEYSTORE_FILE: release.keystore
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
         run: gradle assembleRelease
 
       - name: Upload APK
