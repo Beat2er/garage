@@ -361,10 +361,11 @@ class GarageViewModel(application: Application) : AndroidViewModel(application) 
                 val obj = element.asJsonObject
                 val name = obj.get("n")?.asString ?: continue
                 val mac = obj.get("m")?.asString ?: continue
+                val password = obj.get("p")?.asString ?: ""
                 val normalizedMac = normalizeMac(mac) ?: continue
 
                 if (normalizedMac !in currentMacs) {
-                    repository.addDevice(Device(name = name, mac = normalizedMac))
+                    repository.addDevice(Device(name = name, mac = normalizedMac, password = password))
                     added++
                 }
             }
@@ -386,8 +387,14 @@ class GarageViewModel(application: Application) : AndroidViewModel(application) 
 
     fun getExportConfig(): String {
         val devices = _uiState.value.devices
-        val configDevices = devices.map { mapOf("n" to it.name, "m" to it.mac) }
-        val config = mapOf("v" to 1, "d" to configDevices)
+        val configDevices = devices.map { device ->
+            buildMap {
+                put("n", device.name)
+                put("m", device.mac)
+                if (device.password.isNotEmpty()) put("p", device.password)
+            }
+        }
+        val config = mapOf("v" to 2, "d" to configDevices)
         return com.google.gson.Gson().toJson(config)
     }
 

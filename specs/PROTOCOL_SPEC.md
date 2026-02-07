@@ -146,14 +146,15 @@ Beispiele:
 
 ```json
 {
-  "v": 1,
+  "v": 2,
   "d": [
     {
       "n": "Garage Vorne",
-      "m": "cc:db:a7:cf:eb:00"
+      "m": "cc:db:a7:cf:eb:00",
+      "p": "mein_passwort"
     },
     {
-      "n": "Garage Hinten", 
+      "n": "Garage Hinten",
       "m": "44:17:93:cd:2e:20"
     }
   ]
@@ -162,10 +163,13 @@ Beispiele:
 
 | Feld | Beschreibung |
 |------|--------------|
-| `v` | Schema-Version (aktuell: 1) |
+| `v` | Schema-Version (aktuell: 2) |
 | `d` | Array von Geräten |
 | `d[].n` | Anzeigename |
 | `d[].m` | WiFi-MAC-Adresse (lowercase, mit Doppelpunkten) |
+| `d[].p` | Passwort (optional, nur wenn gesetzt) |
+
+> **Abwärtskompatibilität:** v1-Imports (ohne `p`-Feld) werden weiterhin akzeptiert, Passwort defaults auf "".
 
 ### QR-Code / Share-URL Format
 
