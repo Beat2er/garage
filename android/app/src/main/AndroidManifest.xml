@@ -72,6 +72,22 @@
             android:foregroundServiceType="connectedDevice"
             android:exported="false" />
 
+        <service
+            android:name=".tile.GarageTileService"
+            android:icon="@drawable/ic_tile_garage"
+            android:label="@string/tile_label"
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE" />
+            </intent-filter>
+        </service>
+
+        <activity
+            android:name=".tile.TileDevicePickerActivity"
+            android:excludeFromRecents="true"
+            android:theme="@style/Theme.Garage.Transparent" />
+
     </application>
 
 </manifest>

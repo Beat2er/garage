@@ -74,6 +74,11 @@ class WidgetTriggerService : Service() {
             stopSelf(startId)
             return START_NOT_STICKY
         }
+        if (widgetType == "tile" && deviceMac.isNullOrEmpty()) {
+            Log.e(TAG, "Ungültige Parameter (tile): mac=$deviceMac")
+            stopSelf(startId)
+            return START_NOT_STICKY
+        }
 
         createChannel(this)
         val notification = buildNotification("Verbinde mit $deviceName...")
@@ -103,10 +108,10 @@ class WidgetTriggerService : Service() {
                 }
             } else null
 
-            val statusUpdater: suspend (String, String) -> Unit = if (widgetType == "multi") {
-                { status, text -> updateMultiStatus(deviceId!!, status, text) }
-            } else {
-                { status, text -> updateStatus(singleGlanceId!!, status, text) }
+            val statusUpdater: suspend (String, String) -> Unit = when (widgetType) {
+                "multi" -> { status, text -> updateMultiStatus(deviceId!!, status, text) }
+                "tile" -> { _, _ -> } // No widget UI to update for tiles
+                else -> { status, text -> updateStatus(singleGlanceId!!, status, text) }
             }
 
             var bleManager: ShellyBleManager? = null
@@ -161,12 +166,14 @@ class WidgetTriggerService : Service() {
                 try { bleManager?.disconnect() } catch (_: Exception) {}
             }
 
-            // Reset to idle after delay
-            delay(RESET_DELAY_MS)
-            if (widgetType == "multi") {
-                statusUpdater(WidgetStatus.IDLE, "Bereit")
-            } else {
-                statusUpdater(WidgetStatus.IDLE, "Tippen zum Auslösen")
+            // Reset to idle after delay (skip for tile — no widget state to reset)
+            if (widgetType != "tile") {
+                delay(RESET_DELAY_MS)
+                if (widgetType == "multi") {
+                    statusUpdater(WidgetStatus.IDLE, "Bereit")
+                } else {
+                    statusUpdater(WidgetStatus.IDLE, "Tippen zum Auslösen")
+                }
             }
 
             stopSelf(startId)

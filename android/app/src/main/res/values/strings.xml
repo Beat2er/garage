@@ -9,4 +9,5 @@
     <string name="multi_widget_description">Alle Geräte mit Status und Trigger-Button</string>
     <string name="multi_widget_preview_title">Alle Garagen</string>
     <string name="multi_widget_preview_subtitle">3 Geräte konfiguriert</string>
+    <string name="tile_label">Garage</string>
 </resources>
