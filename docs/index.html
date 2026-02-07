@@ -1563,14 +1563,13 @@
                 return;
             }
 
-            // Create config object (without passwords for security!)
             const config = {
-                v: 1, // version
-                d: devices.map(d => ({
-                    n: d.name,
-                    m: d.mac
-                    // Note: password not included for security
-                }))
+                v: 2,
+                d: devices.map(d => {
+                    const entry = { n: d.name, m: d.mac };
+                    if (d.password) entry.p = d.password;
+                    return entry;
+                })
             };
 
             // Encode config as base64 and append to current URL
@@ -1595,8 +1594,12 @@
 
         function copyConfigToClipboard() {
             const config = {
-                v: 1,
-                d: devices.map(d => ({ n: d.name, m: d.mac }))
+                v: 2,
+                d: devices.map(d => {
+                    const entry = { n: d.name, m: d.mac };
+                    if (d.password) entry.p = d.password;
+                    return entry;
+                })
             };
             
             const configBase64 = btoa(JSON.stringify(config));
@@ -1648,7 +1651,7 @@
                         devices.push({
                             name: d.n,
                             mac: mac,
-                            password: ''
+                            password: d.p || ''
                         });
                         added++;
                     }
