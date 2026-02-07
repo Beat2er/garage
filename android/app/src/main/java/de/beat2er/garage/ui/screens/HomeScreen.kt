@@ -55,6 +55,8 @@ fun HomeScreen(
     versionName: String,
     modifier: Modifier = Modifier
 ) {
+    val navBarBottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
+
     var showAddSheet by remember { mutableStateOf(false) }
     var showShareSheet by remember { mutableStateOf(false) }
     var showSettingsSheet by remember { mutableStateOf(false) }
@@ -95,7 +97,8 @@ fun HomeScreen(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(top = 48.dp, bottom = 24.dp),
+                    .statusBarsPadding()
+                    .padding(top = 24.dp, bottom = 24.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
@@ -207,7 +210,7 @@ fun HomeScreen(
                         .weight(1f)
                         .padding(horizontal = 20.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp),
-                    contentPadding = PaddingValues(bottom = 100.dp)
+                    contentPadding = PaddingValues(bottom = 100.dp + navBarBottom)
                 ) {
                     items(
                         items = uiState.devices,
@@ -240,6 +243,7 @@ fun HomeScreen(
                         )
                     )
                 )
+                .navigationBarsPadding()
                 .padding(horizontal = 20.dp, vertical = 16.dp),
             horizontalArrangement = Arrangement.spacedBy(10.dp, Alignment.CenterHorizontally)
         ) {
@@ -302,6 +306,7 @@ fun HomeScreen(
             exit = slideOutVertically(targetOffsetY = { it }) + fadeOut(),
             modifier = Modifier
                 .align(Alignment.BottomCenter)
+                .navigationBarsPadding()
                 .padding(bottom = 80.dp)
         ) {
             if (toastMessage != null) {
