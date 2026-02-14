@@ -135,6 +135,9 @@ class ShellyBleManager(private val context: Context) {
     }
 
     suspend fun connect(macAddress: String) {
+        if (bluetoothAdapter?.isEnabled != true)
+            throw Exception("Bluetooth ist deaktiviert")
+
         val device = bluetoothAdapter?.getRemoteDevice(macAddress)
             ?: throw Exception("Bluetooth nicht verfügbar")
 
@@ -157,6 +160,9 @@ class ShellyBleManager(private val context: Context) {
     }
 
     suspend fun connectByScan(macSuffix: String) {
+        if (bluetoothAdapter?.isEnabled != true)
+            throw Exception("Bluetooth ist deaktiviert")
+
         val scanner = bluetoothAdapter?.bluetoothLeScanner
             ?: throw Exception("BLE-Scanner nicht verfügbar")
 

@@ -15,6 +15,7 @@ import androidx.core.app.NotificationCompat
 import androidx.glance.appwidget.GlanceAppWidgetManager
 import androidx.glance.appwidget.state.updateAppWidgetState
 import androidx.glance.state.PreferencesGlanceStateDefinition
+import android.bluetooth.BluetoothManager
 import de.beat2er.garage.R
 import de.beat2er.garage.ble.ShellyBleManager
 import kotlinx.coroutines.*
@@ -112,6 +113,13 @@ class WidgetTriggerService : Service() {
                 "multi" -> { status, text -> updateMultiStatus(deviceId!!, status, text) }
                 "tile" -> { _, _ -> } // No widget UI to update for tiles
                 else -> { status, text -> updateStatus(singleGlanceId!!, status, text) }
+            }
+
+            val btAdapter = (getSystemService(Context.BLUETOOTH_SERVICE) as? BluetoothManager)?.adapter
+            if (btAdapter?.isEnabled != true) {
+                statusUpdater(WidgetStatus.ERROR, "BT deaktiviert")
+                stopSelf(startId)
+                return@launch
             }
 
             var bleManager: ShellyBleManager? = null
