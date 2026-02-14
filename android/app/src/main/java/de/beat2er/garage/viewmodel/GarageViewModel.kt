@@ -44,6 +44,11 @@ data class BleScanDevice(
     val bleAddress: String
 )
 
+sealed interface PendingBluetoothAction {
+    data class TriggerDevice(val device: Device) : PendingBluetoothAction
+    data object StartScan : PendingBluetoothAction
+}
+
 data class GarageUiState(
     val devices: List<Device> = emptyList(),
     val deviceStates: Map<String, DeviceUiState> = emptyMap(),
@@ -53,7 +58,8 @@ data class GarageUiState(
     val scanResults: List<BleScanDevice> = emptyList(),
     val debugMode: Boolean = false,
     val debugLogs: List<String> = emptyList(),
-    val updateInfo: UpdateInfo? = null
+    val updateInfo: UpdateInfo? = null,
+    val requestBluetoothEnable: Boolean = false
 )
 
 class GarageViewModel(application: Application) : AndroidViewModel(application) {
@@ -70,6 +76,8 @@ class GarageViewModel(application: Application) : AndroidViewModel(application) 
 
     private val _uiState = MutableStateFlow(GarageUiState())
     val uiState: StateFlow<GarageUiState> = _uiState.asStateFlow()
+
+    private var pendingBluetoothAction: PendingBluetoothAction? = null
 
     init {
         _uiState.update { it.copy(debugMode = prefs.getBoolean("debug_mode", false)) }
@@ -192,6 +200,12 @@ class GarageViewModel(application: Application) : AndroidViewModel(application) 
             return
         }
 
+        if (bluetoothManager?.adapter?.isEnabled != true) {
+            pendingBluetoothAction = PendingBluetoothAction.StartScan
+            _uiState.update { it.copy(requestBluetoothEnable = true) }
+            return
+        }
+
         _uiState.update { it.copy(isScanning = true, scanResults = emptyList()) }
         addDebugLog("BLE-Scan gestartet")
 
@@ -263,6 +277,14 @@ class GarageViewModel(application: Application) : AndroidViewModel(application) 
     // ========== BLE Trigger ==========
 
     fun triggerDevice(device: Device) {
+        val btAdapter = (getApplication<Application>()
+            .getSystemService(Context.BLUETOOTH_SERVICE) as? BluetoothManager)?.adapter
+        if (btAdapter?.isEnabled != true) {
+            pendingBluetoothAction = PendingBluetoothAction.TriggerDevice(device)
+            _uiState.update { it.copy(requestBluetoothEnable = true) }
+            return
+        }
+
         viewModelScope.launch(Dispatchers.IO) {
             val mac = device.mac
             updateDeviceState(mac, DeviceUiState(
@@ -396,6 +418,20 @@ class GarageViewModel(application: Application) : AndroidViewModel(application) 
         }
         val config = mapOf("v" to 2, "d" to configDevices)
         return com.google.gson.Gson().toJson(config)
+    }
+
+    // ========== Bluetooth Enable ==========
+
+    fun onBluetoothEnableResult(enabled: Boolean) {
+        _uiState.update { it.copy(requestBluetoothEnable = false) }
+        val action = pendingBluetoothAction
+        pendingBluetoothAction = null
+        if (enabled && action != null) {
+            when (action) {
+                is PendingBluetoothAction.TriggerDevice -> triggerDevice(action.device)
+                is PendingBluetoothAction.StartScan -> startBleScan()
+            }
+        }
     }
 
     // ========== Helpers ==========

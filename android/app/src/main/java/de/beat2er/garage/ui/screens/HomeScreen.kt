@@ -1,5 +1,10 @@
 package de.beat2er.garage.ui.screens
 
+import android.app.Activity
+import android.bluetooth.BluetoothAdapter
+import android.content.Intent
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -52,6 +57,7 @@ fun HomeScreen(
     onOpenDownload: (String) -> Unit,
     onCheckUpdate: () -> Unit,
     onPinWidget: (Device) -> Unit,
+    onBluetoothEnableResult: (Boolean) -> Unit,
     versionName: String,
     modifier: Modifier = Modifier
 ) {
@@ -61,6 +67,19 @@ fun HomeScreen(
     var showShareSheet by remember { mutableStateOf(false) }
     var showSettingsSheet by remember { mutableStateOf(false) }
     var editingDevice by remember { mutableStateOf<Device?>(null) }
+
+    // Bluetooth enable prompt
+    val enableBtLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        onBluetoothEnableResult(result.resultCode == Activity.RESULT_OK)
+    }
+
+    LaunchedEffect(uiState.requestBluetoothEnable) {
+        if (uiState.requestBluetoothEnable) {
+            enableBtLauncher.launch(Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE))
+        }
+    }
 
     // Toast
     val toastMessage = uiState.toastMessage

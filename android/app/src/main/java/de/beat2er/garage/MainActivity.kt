@@ -61,6 +61,7 @@ class MainActivity : ComponentActivity() {
                     },
                     onCheckUpdate = { viewModel.checkForUpdate(showUpToDate = true) },
                     onPinWidget = { device -> requestPinWidget(device, viewModel) },
+                    onBluetoothEnableResult = viewModel::onBluetoothEnableResult,
                     versionName = BuildConfig.VERSION_NAME,
                     modifier = Modifier.fillMaxSize()
                 )
